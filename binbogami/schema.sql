@@ -7,7 +7,9 @@ create table users (
     id integer primary key autoincrement,
     username text not null,
     name text not null,
-    pwhash text not null
+    pwhash text not null,
+    storage real,
+    bandwidth real
 );
 
 create table podcasts_header (

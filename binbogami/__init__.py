@@ -2,6 +2,7 @@ import sqlite3
 from flask import Flask, g
 from binbogami.views.frontpage import *
 from binbogami.views.register import *
+from binbogami.views.log import *
 
 bbgapp = Flask(__name__)
 bbgapp.config.from_object(__name__)
@@ -42,3 +43,4 @@ def init_db():
 
 bbgapp.register_blueprint(frontpage)
 bbgapp.register_blueprint(register)
+bbgapp.register_blueprint(log)

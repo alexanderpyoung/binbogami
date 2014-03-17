@@ -16,9 +16,10 @@ def reg():
         else:
             pw2bytes = request.form['password'].encode("utf-8")
             passwordhashed = bcrypt.encrypt(pw2bytes)
-            #TODO: You need to take the salt out of the schema
-            g.sqlite_db.execute("insert into users (username, name, pwhash) values (?, ?, ?)",
-                                        [request.form['username'], request.form['name'], passwordhashed])
+            g.sqlite_db.execute(
+                "insert into users (username, name, pwhash) values (?, ?, ?)",
+                [request.form['username'], request.form['name'], passwordhashed]
+            )
             g.sqlite_db.commit()
             success = "You have successfully registered!"
             
