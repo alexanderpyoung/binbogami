@@ -1,0 +1,20 @@
+<html>
+    <head>
+        <title>Register</title>
+    </head>
+    <body>
+        {% if error %}<p style="color:red">Error: {{error}}</p> {% endif %}
+        {% if success %}<p style="color:green">Success: {{success}}</p> {% endif %}
+        <form action="{{ url_for('register.reg') }}" method="POST">
+            <dl>
+                <dt>Username: 
+                <dd><input type="text" size=30 name="username" />
+                <dt>Password: 
+                <dd><input type="password" size=30 name="password" />
+                <dt>Friendly name:
+                <dd><input type="text" size=30 name="name" />
+                <dd><input type="submit" value="Register">
+            </dl>
+        </form>
+    </body>
+</html>
