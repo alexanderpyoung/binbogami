@@ -55,3 +55,7 @@ docs/_build/
 # databases
 *.sqlite
 *.db
+
+# OSX stuff
+
+.DS_Store

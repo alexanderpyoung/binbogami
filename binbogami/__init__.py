@@ -11,27 +11,33 @@ bbgapp.config.from_object(__name__)
 bbgapp.config.update(dict(
     DATABASE="bbg.db",
     DEBUG=True,
-    SECRET_KEY="DEVELOPMENTKEY" #CHANGE THIS IN PRODUCTION
+    SECRET_KEY="DEVELOPMENTKEY"
+    #CHANGE THIS IN PRODUCTION
 ))
+
 
 def connect_db():
     db = sqlite3.connect(bbgapp.config['DATABASE'])
     return db
 
+
 @bbgapp.before_request
 def before_request():
     g.sqlite_db = connect_db()
+
 
 def get_db():
     if not hasattr(g, "sqlite_db"):
         g.sqlite_db = connect_db()
     return g.sqlite_db
-    
+
+
 @bbgapp.teardown_appcontext
 def close_db(error):
     if hasattr(g, "sqlite_db"):
         g.sqlite_db.close()
-        
+
+
 def init_db():
     with bbgapp.app_context():
         db = get_db()

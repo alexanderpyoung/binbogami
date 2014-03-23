@@ -27,8 +27,9 @@ def login():
             else:
                 error = "Bad password."
                 return render_template("login.html", error=error)
-    
+
 @log.route("/logout")
 def logout():
     session.pop('username', None)
     return redirect(url_for('frontpage.index'))
+    
