@@ -20,7 +20,7 @@ def login():
             return render_template("login.html", error=error)
         else:
             if bcrypt.verify(request.form["password"], row[3]):
-                session['uid'] = row[0]
+                session['uid'] = str(row[0])
                 session['username'] = row[1]
                 session['name'] = row[2]
                 return redirect(url_for('admin.show_casts'))

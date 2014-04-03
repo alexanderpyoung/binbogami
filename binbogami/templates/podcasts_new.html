@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block head %}
+	<title>Add a new Podcast</title>
+{% endblock %}
+{% block body %}
+        {% if error %}<p style="color:red">Error: {{error}}</p> {% endif %}
+        <form action="{{ url_for('admin.new_cast') }}" method="POST">
+            <dl>
+                <dt>Name: 
+                <dd><input type="text" size=30 name="castname" />
+                <dt>Description: 
+                <dd><textarea name="description">Enter your description here.</textarea>
+				<dt>URL:
+				<dd><input type="text" size=30 name="url">
+				<dt>Image:
+				<dd><input type="text" size=30 name="img">
+                <dd><input type="submit" value="Add podcast">
+            </dl>
+        </form>
+{% endblock %}

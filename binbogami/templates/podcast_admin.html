@@ -4,9 +4,11 @@
 {% endblock %}
 {% block body %}
 {% if list %}
+<table>
 {% for item in list %}
-	{{ item }}
+	<tr><td>{{ item[0] }}</td><td>{{ item[1] }}</td><td>{{ item[2] }}</td><td>{{ item[2] }}</td></tr>
 {% endfor %}
+</table>
 {% else %}
 	{{ nocast }}
 {% endif %}
