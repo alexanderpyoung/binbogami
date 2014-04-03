@@ -3,5 +3,11 @@
         <title>Podcasts</title>
 {% endblock %}
 {% block body %}
-Podcast list.
+{% if list %}
+{% for item in list %}
+	{{ item }}
+{% endfor %}
+{% else %}
+	{{ nocast }}
+{% endif %}
 {% endblock %}
