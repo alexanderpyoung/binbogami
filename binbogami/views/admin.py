@@ -3,13 +3,12 @@ from flask import url_for
 
 admin = Blueprint("admin", __name__, template_folder="templates")
 
-@admin.route("/admin/")
+@admin.route("/admin")
 def show_casts():
     if 'username' in session:
-        casts = g.sqlite_db.execute("select name, description, url, image from podcasts_header where owner=(?)",
+        casts = g.sqlite_db.execute("select name, description, url, image, id from podcasts_header where owner=(?)",
                                     session['uid'])
         rows = casts.fetchall()
-        castlist = []
         list = None
         if rows != []:
             list = rows
@@ -25,7 +24,7 @@ def new_cast():
             return render_template("podcasts_new.html")
         elif request.method == "POST":
             query = g.sqlite_db.execute("select name from podcasts_header where name=(?) and owner=(?)",
-                                [request.form['castname'], str(session['uid'])]
+                                [request.form['castname'], session['uid']]
             )
             result = query.fetchone()
             if result == None:
@@ -42,3 +41,31 @@ def new_cast():
     else:
         #TODO: implement this in a prettier manner.
         abort(401)
+
+@admin.route("/admin/delete/cast/<castname>")
+def delete_cast(castname):
+    if 'username' in session:
+        # 1) Does the podcast exist? 2) Does it belong to the logged in user?
+        getid = g.sqlite_db.execute(
+            "select id from podcasts_header where name=(?) and owner=(?)", 
+            [castname, session['uid']]
+        )
+        podcastid = getid.fetchone()
+        if podcastid != None:
+            g.sqlite_db.execute(
+                "delete from podcasts_header where name=(?)",
+                [castname]
+            )
+            g.sqlite_db.execute(
+                "delete from podcasts_casts where podcast=(?)",
+                [str(podcastid)]    
+            )
+            g.sqlite_db.commit()
+            #TODO: Add logic around deleting files.
+            return redirect(url_for('admin.show_casts'))
+        else:
+            return "Sorry, the podcast you are attempting to delete does not exist."
+    else:
+        #TODO: implement this in a prettier manner
+        abort(401)
+    
