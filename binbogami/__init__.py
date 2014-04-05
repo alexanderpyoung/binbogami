@@ -4,6 +4,7 @@ from binbogami.views.frontpage import *
 from binbogami.views.register import *
 from binbogami.views.log import *
 from binbogami.views.admin import *
+from binbogami.views.serve import *
 
 bbgapp = Flask(__name__)
 bbgapp.config.from_object(__name__)
@@ -11,8 +12,9 @@ bbgapp.config.from_object(__name__)
 bbgapp.config.update(dict(
     DATABASE="bbg.db",
     DEBUG=True,
-    SECRET_KEY="DEVELOPMENTKEY"
+    SECRET_KEY="DEVELOPMENTKEY",
     #CHANGE THIS IN PRODUCTION
+    UPLOAD_FOLDER="/Users/alexander/git/binbogami/files"
 ))
 
 
