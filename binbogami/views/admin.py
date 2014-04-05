@@ -27,6 +27,7 @@ def new_cast():
                                 [request.form['castname'], session['uid']]
             )
             result = query.fetchone()
+            #.fetchone() returns None where no results are found; .fetchall() an empty list.
             if result == None:
                 g.sqlite_db.execute(
                     "insert into podcasts_header (owner, name, description, url, image) values (?,?,?,?,?)", 
@@ -41,6 +42,13 @@ def new_cast():
     else:
         #TODO: implement this in a prettier manner.
         abort(401)
+        
+@admin.route("/admin/<castname>/new/ep/")
+def new_ep(castname):
+    if 'username' in session:
+        return castname
+    else:
+        abort(401)
 
 @admin.route("/admin/delete/cast/<castname>")
 def delete_cast(castname):
@@ -50,7 +58,7 @@ def delete_cast(castname):
             "select id from podcasts_header where name=(?) and owner=(?)", 
             [castname, session['uid']]
         )
-        podcastid = getid.fetchone()
+        podcastid = get_id(castname, session['uid'])
         if podcastid != None:
             g.sqlite_db.execute(
                 "delete from podcasts_header where name=(?)",
@@ -68,4 +76,10 @@ def delete_cast(castname):
     else:
         #TODO: implement this in a prettier manner
         abort(401)
-    
+        
+def get_id(castname, owner):
+    getid = g.sqlite_db.execute(
+        "select id from podcasts_header where name=(?) and owner=(?)", 
+        [castname, owner]
+    )
+    return getid.fetchone()
