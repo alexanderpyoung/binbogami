@@ -59,3 +59,7 @@ docs/_build/
 # OSX stuff
 
 .DS_Store
+
+# Data stuff
+
+files/

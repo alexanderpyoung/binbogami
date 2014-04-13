@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block head %}
+	<title>{{ podcastid[1] }} | Administration</title>{% endblock %}
+{% block body %}
+{% if list %}
+<table>
+{% for item in list %}
+	<tr><td>{{ item[0] }}</td><td>{{ item[1] }}</td><td>{{ item[2] }}</td><td>{{ item[3] }}</td><td><a href="{{ url_for('admin.delete_ep', castname=castname, epname=item[0]) }}">Delete cast</a></td></tr>
+{% endfor %}
+</table>
+{% else %}
+	{{ noep }}
+{% endif %}
+{% endblock %}
