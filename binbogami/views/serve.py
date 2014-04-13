@@ -1,7 +1,93 @@
-from flask import Blueprint, g, session
+from flask import Blueprint, g, session, send_from_directory, current_app, request
+from binbogami.views.admin import get_id
+import xml.etree.ElementTree as ET
+from datetime import datetime
+from urllib.parse import quote
 
 serve = Blueprint("serve", __name__, template_folder="templates")
 
 @serve.route("/<castname>/<epname>")
 def serve_file(castname, epname):
-    pass
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'],
+                                                    epname.replace(" ", "_"))
+                                                    
+@serve.route("/<castname>/feed")
+def serve_xml(castname):
+    cast_meta = g.sqlite_db.execute(
+        "select * from podcasts_header where name=(?)",
+        [castname]
+    ).fetchone()
+    if cast_meta != None:
+        episodes = g.sqlite_db.execute(
+            "select * from podcasts_casts where podcast=(?) order by date desc",
+            [cast_meta[0]]
+        ).fetchall()
+        return build_xml(cast_meta, episodes)
+    else:
+        return "No such cast."
+        
+def build_xml(meta, casts):
+    #General XML structure
+    #TODO: Categories; Editorship, TTL; SkipDays/Hours; iTunes?
+    rss = ET.Element('rss', 
+                        {
+                            'version':'2.0',
+                            'xml:base': meta[4],
+                            'xmlns:atom': 'http://www.w3.org/2005/Atom',
+                            'xmlns:itunes': "http://www.itunes.com/dtds/podcast-1.0.dtd"
+                         }
+                    )
+    channel = ET.SubElement(rss, 'channel')
+    podcast_title = ET.SubElement(channel, 'title')
+    podcast_description = ET.SubElement(channel, 'description')
+    podcast_link = ET.SubElement(channel, 'link')
+    podcast_image = ET.SubElement(channel, 'image')
+    podcast_image_url = ET.SubElement(podcast_image, 'url')
+    podcast_image_link = ET.SubElement(podcast_image, 'link')
+    podcast_image_width = ET.SubElement(podcast_image, 'width')
+    podcast_image_height = ET.SubElement(podcast_image, 'height')
+    podcast_copyright = ET.SubElement(channel, 'copyright')
+    podcast_generator = ET.SubElement(channel, 'generator')
+    
+    #Populate elements with relevant data
+    podcast_title.text = meta[2]
+    podcast_description.text = meta[3]
+    podcast_link.text = meta[4]
+    podcast_image_url.text = meta[5]
+    podcast_image_link.text = meta[4]
+    podcast_image_width.text = '144'
+    podcast_image_height.text = '144'
+    podcast_copyright.text = "Licensed under the Open Audio License."
+    podcast_generator.text = "Binbogami"
+    
+    #now for the items for each podcast. Thankfully fucking iterable.
+    for cast in casts:
+        encoded_url = request.url_root + quote(meta[2]) + "/" + quote(cast[2]) + ".mp3"
+        #TODO: Store length and format of cast in DB. Derive MIME type from this.
+        #Structure
+        cast_item = ET.SubElement(channel, 'item')
+        cast_title = ET.SubElement(cast_item, 'title')
+        cast_description = ET.SubElement(cast_item, 'description')
+        cast_date = ET.SubElement(cast_item, 'pubDate')
+        cast_enclosure = ET.SubElement(cast_item, 'enclosure',
+                            {
+                                'url': encoded_url,
+                                'type': 'audio/mpeg'
+                            }
+                        )
+        cast_guid = ET.SubElement(cast_item, 'guid',
+                        {
+                            'isPermaLink':"true"
+                        }
+                    )
+        
+        #Content
+        cast_title.text = cast[2]
+        cast_description.text = cast[3]
+        cast_date.text = datetime.strptime(cast[5], "%Y-%m-%d %H:%M:%S").strftime("%a, %d %b %Y %H:%M:%S %z") + "+0000"
+        cast_guid.text = encoded_url
+    
+    #XML miscellanea
+    doctype = '<?xml version="1.0" encoding="utf-8" ?>'
+    body = ET.tostring(rss, encoding="UTF-8", method="xml").decode("utf-8")
+    return doctype + body

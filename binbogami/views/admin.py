@@ -46,8 +46,8 @@ def new_cast():
         if request.method == "GET":
             return render_template("podcasts_new.html")
         elif request.method == "POST":
-            query = g.sqlite_db.execute("select name from podcasts_header where name=(?) and owner=(?)",
-                                [request.form['castname'], session['uid']]
+            query = g.sqlite_db.execute("select name from podcasts_header where name=(?)",
+                                [request.form['castname']]
             )
             result = query.fetchone()
             #.fetchone() returns None where no results are found; .fetchall() an empty list.
@@ -90,7 +90,7 @@ def new_ep(castname):
                                 )
                     ep.save(filepath)
                     g.sqlite_db.execute(
-                        "insert into podcasts_casts (podcast, title, description, castfile) values (?,?,?,?)",
+                        "insert into podcasts_casts (podcast, title, description, castfile, date) values (?,?,?,?, datetime('now'))",
                         [podcastid[0], request.form['epname'], request.form['description'], filepath]
                     )
                     g.sqlite_db.commit()
