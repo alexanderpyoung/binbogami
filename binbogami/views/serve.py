@@ -1,4 +1,5 @@
 from flask import Blueprint, g, session, send_from_directory, current_app, request
+from werkzeug.utils import secure_filename
 from binbogami.views.admin import get_id
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -8,9 +9,16 @@ serve = Blueprint("serve", __name__, template_folder="templates")
 
 @serve.route("/<castname>/<epname>")
 def serve_file(castname, epname):
+    safe_filename = secure_filename(castname + " - " + epname)
     return send_from_directory(current_app.config['UPLOAD_FOLDER'],
-                                                    epname.replace(" ", "_"))
+                                                    safe_filename.replace(" ", "_"))
                                                     
+@serve.route("/image/<img_name>")
+def serve_image(img_name):
+    img_send = img_name.replace(" ", "_")
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'],
+                                img_send)
+
 @serve.route("/<castname>/feed")
 def serve_xml(castname):
     cast_meta = g.sqlite_db.execute(
@@ -28,6 +36,9 @@ def serve_xml(castname):
         
 def build_xml(meta, casts):
     #General XML structure
+    encoded_feed_url = request.url_root + quote(meta[2]) + "/feed"
+    cast_img_list = meta[5].rsplit("/")
+    cast_img = cast_img_list[len(cast_img_list)-1]
     #TODO: Categories; Editorship, TTL; SkipDays/Hours; iTunes?
     rss = ET.Element('rss', 
                         {
@@ -41,6 +52,12 @@ def build_xml(meta, casts):
     podcast_title = ET.SubElement(channel, 'title')
     podcast_description = ET.SubElement(channel, 'description')
     podcast_link = ET.SubElement(channel, 'link')
+    podcast_atom_link = ET.SubElement(channel, 'atom:link',
+                            {
+                                'rel' : 'self',
+                                'href' : encoded_feed_url
+                            }
+                        )
     podcast_image = ET.SubElement(channel, 'image')
     podcast_image_url = ET.SubElement(podcast_image, 'url')
     podcast_image_link = ET.SubElement(podcast_image, 'link')
@@ -53,7 +70,7 @@ def build_xml(meta, casts):
     podcast_title.text = meta[2]
     podcast_description.text = meta[3]
     podcast_link.text = meta[4]
-    podcast_image_url.text = meta[5]
+    podcast_image_url.text = request.url_root + "image/" + cast_img
     podcast_image_link.text = meta[4]
     podcast_image_width.text = '144'
     podcast_image_height.text = '144'
@@ -62,8 +79,12 @@ def build_xml(meta, casts):
     
     #now for the items for each podcast. Thankfully fucking iterable.
     for cast in casts:
-        encoded_url = request.url_root + quote(meta[2]) + "/" + quote(cast[2]) + ".mp3"
-        #TODO: Store length and format of cast in DB. Derive MIME type from this.
+        #Some variable-setting
+        encoded_url = request.url_root + quote(meta[2]) + "/" + quote(cast[2]) + "." + quote(cast[7])
+        if cast[7] == "mp3":
+            mime_type = "audio/mpeg"
+        else:
+            mime_type = "audio/ogg"
         #Structure
         cast_item = ET.SubElement(channel, 'item')
         cast_title = ET.SubElement(cast_item, 'title')
@@ -72,7 +93,7 @@ def build_xml(meta, casts):
         cast_enclosure = ET.SubElement(cast_item, 'enclosure',
                             {
                                 'url': encoded_url,
-                                'type': 'audio/mpeg'
+                                'type': mime_type
                             }
                         )
         cast_guid = ET.SubElement(cast_item, 'guid',

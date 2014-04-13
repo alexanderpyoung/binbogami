@@ -2,6 +2,10 @@ import os
 from flask import Blueprint, g, session, render_template, abort, request, redirect
 from flask import url_for, current_app
 from werkzeug.utils import secure_filename
+from mutagenx.mp3 import MP3
+from mutagenx.oggvorbis import OggVorbis
+from mutagenx.oggopus import OggOpus
+from mutagenx.oggspeex import OggSpeex
 
 admin = Blueprint("admin", __name__, template_folder="templates")
 
@@ -52,10 +56,20 @@ def new_cast():
             result = query.fetchone()
             #.fetchone() returns None where no results are found; .fetchall() an empty list.
             if result == None:
+                img = request.files['img']
+                if img and img.filename.rsplit(".", 1)[1] in ["jpg", "jpeg", "gif", "png"]:
+                    filename = request.form['castname'] + "." + \
+                        img.filename.rsplit(".", 1)[1] 
+                    safe_filename = secure_filename(filename)
+                    imgpath = os.path.join(
+                            current_app.config["UPLOAD_FOLDER"],
+                            safe_filename
+                    )
+                    img.save(imgpath)
                 g.sqlite_db.execute(
                     "insert into podcasts_header (owner, name, description, url, image) values (?,?,?,?,?)", 
                     [session['uid'],request.form['castname'],
-                    request.form['description'], request.form['url'], request.form['img']]
+                    request.form['description'], request.form['url'], imgpath]
                 )
                 g.sqlite_db.commit()
                 return redirect(url_for('admin.show_casts'))
@@ -81,17 +95,31 @@ def new_ep(castname):
                 )
                 result = query.fetchone()
                 if ep and allowed_file(ep.filename) and result == None:
-                    new_filename = request.form['epname'] + "." + \
-                                                ep.filename.rsplit('.', 1)[1]
+                    file_ext = ep.filename.rsplit('.', 1)[1]
+                    new_filename = castname + " - " + request.form['epname'] + "." + file_ext                
                     filename = secure_filename(new_filename) 
                     filepath = os.path.join(
                                 current_app.config["UPLOAD_FOLDER"], 
                                 filename
                                 )
                     ep.save(filepath)
+                    if file_ext == "mp3":
+                        file_length = MP3(filepath).info.length
+                    elif file_ext == "ogg":
+                        file_length = OggVorbis(filepath).info.length
+                    elif file_ext == "spx":
+                        file_length = OggSpeex(filepath).info.length
+                    elif file_ext == "opus":
+                        file_length = OggOpus(filepath).info.length
+                    else:
+                        print("no idea what happened here")
                     g.sqlite_db.execute(
-                        "insert into podcasts_casts (podcast, title, description, castfile, date) values (?,?,?,?, datetime('now'))",
-                        [podcastid[0], request.form['epname'], request.form['description'], filepath]
+                        "insert into podcasts_casts (podcast, title, description, castfile, date, length, filetype) values (?,?,?,?, datetime('now'),?,?)",
+                        [
+                            podcastid[0], request.form['epname'], 
+                            request.form['description'], filepath,
+                            file_length, file_ext
+                        ]
                     )
                     g.sqlite_db.commit()
                 
@@ -113,6 +141,7 @@ def allowed_file(filename):
 def delete_cast(castname):
     if 'username' in session:
         # 1) Does the podcast exist? 2) Does it belong to the logged in user?
+        #TODO: Delete coverart.
         podcastid = get_id("id", castname, session['uid'])
         if podcastid != None:
             # Get and delete files
@@ -122,7 +151,19 @@ def delete_cast(castname):
             )
             results = query.fetchall()
             for result in results:
-                os.remove(result[0])
+                try:
+                    os.remove(result[0])
+                except FileNotFoundError:
+                    pass
+            query = g.sqlite_db.execute(
+                "select image from podcasts_header where id=(?)",
+                [podcastid[0]]
+            )
+            results = query.fetchone()
+            try:
+                os.remove(results[0])
+            except FileNotFoundError:
+                pass
             #Do the associated database operations
             g.sqlite_db.execute(
                 "delete from podcasts_header where name=(?)",
@@ -130,7 +171,7 @@ def delete_cast(castname):
             )
             g.sqlite_db.execute(
                 "delete from podcasts_casts where podcast=(?)",
-                [str(podcastid)]    
+                [podcastid[0]]    
             )
             g.sqlite_db.commit()
             return redirect(url_for('admin.show_casts'))
@@ -152,7 +193,10 @@ def delete_ep(castname, epname):
         if podcastid != None and episode != []:
             # Get and delete file
             for ep in episode:
-                os.remove(ep[0])
+                try:
+                    os.remove(ep[0])
+                except FileNotFoundError:
+                    pass
             #Do the associated database operations
             g.sqlite_db.execute(
                 "delete from podcasts_casts where podcast=(?) and title=(?)",

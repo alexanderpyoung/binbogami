@@ -4,7 +4,7 @@
 {% endblock %}
 {% block body %}
         {% if error %}<p style="color:red">Error: {{error}}</p> {% endif %}
-        <form action="{{ url_for('admin.new_cast') }}" method="POST">
+        <form action="{{ url_for('admin.new_cast') }}" method="POST" enctype="multipart/form-data">
             <dl>
                 <dt>Name: 
                 <dd><input type="text" size=30 name="castname" />
@@ -13,7 +13,7 @@
 				<dt>URL:
 				<dd><input type="text" size=30 name="url">
 				<dt>Image:
-				<dd><input type="text" size=30 name="img">
+				<dd><input type="file" size=30 name="img">
                 <dd><input type="submit" value="Add podcast">
             </dl>
         </form>

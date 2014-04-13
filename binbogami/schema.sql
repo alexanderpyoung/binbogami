@@ -29,5 +29,7 @@ create table podcasts_casts (
     description text not null,
     castfile text not null,
 	date text not null,
+	length text not null,
+	filetype text not null,
     foreign key(podcast) references podcasts_header(id)
 );
