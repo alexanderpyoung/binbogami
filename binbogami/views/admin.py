@@ -113,9 +113,9 @@ def edit_cast(castname):
                         )
                         img.save(imgpath)
                         g.sqlite_db.execute(
-                            "update podcasts_header set name=(?), description=(?), url=(?), image=(?)",
+                            "update podcasts_header set name=(?), description=(?), url=(?), image=(?) where id=(?)",
                             [request.form['castname'], request.form['description'],
-                            request.form['url'], imgpath]
+                            request.form['url'], imgpath, podcastid[0]]
                         )
                         g.sqlite_db.commit()
                         return redirect(url_for('admin.show_casts'))
@@ -123,9 +123,9 @@ def edit_cast(castname):
                         return "Unsupported image filetype."
                 else:
                     g.sqlite_db.execute(
-                        "update podcasts_header set name=(?), description=(?), url=(?)",
+                        "update podcasts_header set name=(?), description=(?), url=(?) where id=(?)",
                         [request.form['castname'], request.form['description'],
-                        request.form['url']]
+                        request.form['url'], podcastid[0]]
                     )
                     g.sqlite_db.commit()
                     return redirect(url_for('admin.show_casts'))
