@@ -17,7 +17,7 @@ def serve_file(castname, epname):
 def serve_image(img_name):
     img_send = img_name.replace(" ", "_")
     return send_from_directory(current_app.config['UPLOAD_FOLDER'],
-                                img_send)
+                                secure_filename(img_send))
 
 @serve.route("/<castname>/feed")
 def serve_xml(castname):

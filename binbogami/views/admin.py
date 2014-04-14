@@ -50,6 +50,7 @@ def new_cast():
         if request.method == "GET":
             return render_template("podcasts_new.html")
         elif request.method == "POST":
+            #only one podcast for each name on the server; owner doesn't matter
             query = g.sqlite_db.execute("select name from podcasts_header where name=(?)",
                                 [request.form['castname']]
             )
@@ -57,21 +58,26 @@ def new_cast():
             #.fetchone() returns None where no results are found; .fetchall() an empty list.
             if result == None:
                 img = request.files['img']
-                if img and img.filename.rsplit(".", 1)[1] in ["jpg", "jpeg", "gif", "png"]:
-                    filename = request.form['castname'] + "." + \
-                        img.filename.rsplit(".", 1)[1] 
-                    safe_filename = secure_filename(filename)
-                    imgpath = os.path.join(
-                            current_app.config["UPLOAD_FOLDER"],
-                            safe_filename
-                    )
-                    img.save(imgpath)
-                g.sqlite_db.execute(
-                    "insert into podcasts_header (owner, name, description, url, image) values (?,?,?,?,?)", 
-                    [session['uid'],request.form['castname'],
-                    request.form['description'], request.form['url'], imgpath]
-                )
-                g.sqlite_db.commit()
+                if img:
+                    if img.filename.rsplit(".", 1)[1] in ["jpg", "jpeg", "gif", "png"]:
+                        filename = request.form['castname'] + "." + \
+                            img.filename.rsplit(".", 1)[1] 
+                        safe_filename = secure_filename(filename)
+                        imgpath = os.path.join(
+                                current_app.config["UPLOAD_FOLDER"],
+                                safe_filename
+                        )
+                        img.save(imgpath)
+                        g.sqlite_db.execute(
+                            "insert into podcasts_header (owner, name, description, url, image) values (?,?,?,?,?)", 
+                            [session['uid'],request.form['castname'],
+                            request.form['description'], request.form['url'], imgpath]
+                        )
+                        g.sqlite_db.commit()
+                    else:
+                        return "File not recognised format."
+                else:
+                    return "No image uploaded."
                 return redirect(url_for('admin.show_casts'))
             else:
                 error = "You already have a podcast by that name."
@@ -79,11 +85,105 @@ def new_cast():
     else:
         #TODO: implement this in a prettier manner.
         abort(401)
+  
+@admin.route("/admin/<castname>/edit", methods=['GET', 'POST'])
+def edit_cast(castname):
+    if 'username' in session:
+        podcastid = get_id("id, name", castname, session['uid'])
+        if request.method == "GET":
+            if podcastid != None:
+                cast_details = get_id("id, owner, name, description, url, image", castname, session['uid'])
+                cast_img_list = cast_details[5].rsplit("/")
+                cast_img = cast_img_list[len(cast_img_list)-1]
+                cast_img_url = request.url_root + "image/" + cast_img
+                return render_template("podcasts_edit.html", cast_details=cast_details, cast_img_url=cast_img_url)
+            else:
+                abort(401)
+        elif request.method == "POST":
+            if podcastid != None:
+                img = request.files['img']
+                if len(img.filename) != 0:
+                    if img.filename.rsplit(".", 1)[1] in ["jpg", "jpeg", "gif", "png"]:
+                        filename = request.form['castname'] + "." + \
+                            img.filename.rsplit(".", 1)[1] 
+                        safe_filename = secure_filename(filename)
+                        imgpath = os.path.join(
+                                current_app.config["UPLOAD_FOLDER"],
+                                safe_filename
+                        )
+                        img.save(imgpath)
+                        g.sqlite_db.execute(
+                            "update podcasts_header set name=(?), description=(?), url=(?), image=(?)",
+                            [request.form['castname'], request.form['description'],
+                            request.form['url'], imgpath]
+                        )
+                        g.sqlite_db.commit()
+                        return redirect(url_for('admin.show_casts'))
+                    else:
+                        return "Unsupported image filetype."
+                else:
+                    g.sqlite_db.execute(
+                        "update podcasts_header set name=(?), description=(?), url=(?)",
+                        [request.form['castname'], request.form['description'],
+                        request.form['url']]
+                    )
+                    g.sqlite_db.commit()
+                    return redirect(url_for('admin.show_casts'))
+            else:
+                abort(401)
+        else:
+            return "Unsupported method."
+    else:
+        abort(401)  
+        
+@admin.route("/admin/delete/<castname>")
+def delete_cast(castname):
+    if 'username' in session:
+        # 1) Does the podcast exist? 2) Does it belong to the logged in user?
+        #TODO: Delete coverart.
+        podcastid = get_id("id", castname, session['uid'])
+        if podcastid != None:
+            # Get and delete files
+            query = g.sqlite_db.execute(
+                "select castfile from podcasts_casts where podcast=(?)",
+                [podcastid[0]]
+            )
+            results = query.fetchall()
+            for result in results:
+                try:
+                    os.remove(result[0])
+                except FileNotFoundError:
+                    pass
+            query = g.sqlite_db.execute(
+                "select image from podcasts_header where id=(?)",
+                [podcastid[0]]
+            )
+            results = query.fetchone()
+            try:
+                os.remove(results[0])
+            except FileNotFoundError:
+                pass
+            #Do the associated database operations
+            g.sqlite_db.execute(
+                "delete from podcasts_header where name=(?)",
+                [castname]
+            )
+            g.sqlite_db.execute(
+                "delete from podcasts_casts where podcast=(?)",
+                [podcastid[0]]    
+            )
+            g.sqlite_db.commit()
+            return redirect(url_for('admin.show_casts'))
+        else:
+            return "Sorry, the podcast you are attempting to delete does not exist."
+    else:
+        #TODO: implement this in a prettier manner
+        abort(401)
         
 @admin.route("/admin/<castname>/new", methods=['POST', 'GET'])
 def new_ep(castname):
     if 'username' in session:
-        podcastid = get_id("id, name", castname, session['uid'])
+        podcastid = get_id("id, name, owner", castname, session['uid'])
         if request.method == "GET":
             return render_template("ep_new.html", podcastid=podcastid)
         elif request.method == "POST":
@@ -136,50 +236,6 @@ def new_ep(castname):
 def allowed_file(filename):
     return '.' in filename and \
         filename.rsplit('.', 1)[1] in ["mp3", "ogg", "opus", "spx"]
-
-@admin.route("/admin/delete/<castname>")
-def delete_cast(castname):
-    if 'username' in session:
-        # 1) Does the podcast exist? 2) Does it belong to the logged in user?
-        #TODO: Delete coverart.
-        podcastid = get_id("id", castname, session['uid'])
-        if podcastid != None:
-            # Get and delete files
-            query = g.sqlite_db.execute(
-                "select castfile from podcasts_casts where podcast=(?)",
-                [podcastid[0]]
-            )
-            results = query.fetchall()
-            for result in results:
-                try:
-                    os.remove(result[0])
-                except FileNotFoundError:
-                    pass
-            query = g.sqlite_db.execute(
-                "select image from podcasts_header where id=(?)",
-                [podcastid[0]]
-            )
-            results = query.fetchone()
-            try:
-                os.remove(results[0])
-            except FileNotFoundError:
-                pass
-            #Do the associated database operations
-            g.sqlite_db.execute(
-                "delete from podcasts_header where name=(?)",
-                [castname]
-            )
-            g.sqlite_db.execute(
-                "delete from podcasts_casts where podcast=(?)",
-                [podcastid[0]]    
-            )
-            g.sqlite_db.commit()
-            return redirect(url_for('admin.show_casts'))
-        else:
-            return "Sorry, the podcast you are attempting to delete does not exist."
-    else:
-        #TODO: implement this in a prettier manner
-        abort(401)
         
 @admin.route("/admin/delete/<castname>/<epname>")
 def delete_ep(castname, epname):
