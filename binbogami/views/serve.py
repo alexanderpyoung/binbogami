@@ -1,7 +1,7 @@
 from flask import Blueprint, g, session, send_from_directory, current_app, request
 from werkzeug.utils import secure_filename
 from binbogami.views.admin import get_id
-import xml.etree.ElementTree as ET
+from lxml import etree as ET
 from datetime import datetime
 from urllib.parse import quote
 
@@ -43,16 +43,18 @@ def build_xml(meta, casts):
     rss = ET.Element('rss', 
                         {
                             'version':'2.0',
-                            'xml:base': meta[4],
-                            'xmlns:atom': 'http://www.w3.org/2005/Atom',
-                            'xmlns:itunes': "http://www.itunes.com/dtds/podcast-1.0.dtd"
+                         },
+                         nsmap = {
+                             "atom" : "http://www.w3.org/2005/Atom",
+                             "itunes" : "http://www.itunes.com/dtds/podcast-1.0.dtd"
+                             
                          }
                     )
     channel = ET.SubElement(rss, 'channel')
     podcast_title = ET.SubElement(channel, 'title')
     podcast_description = ET.SubElement(channel, 'description')
     podcast_link = ET.SubElement(channel, 'link')
-    podcast_atom_link = ET.SubElement(channel, 'atom:link',
+    podcast_atom_link = ET.SubElement(channel, '{http://www.w3.org/2005/Atom}link',
                             {
                                 'rel' : 'self',
                                 'href' : encoded_feed_url
@@ -109,6 +111,6 @@ def build_xml(meta, casts):
         cast_guid.text = encoded_url
     
     #XML miscellanea
-    doctype = '<?xml version="1.0" encoding="utf-8" ?>'
-    body = ET.tostring(rss, encoding="UTF-8", method="xml").decode("utf-8")
+    doctype = '<?xml version="1.0" encoding="utf-8" ?>\n'
+    body = ET.tostring(rss, encoding="UTF-8", method="xml", pretty_print="True").decode("utf-8")
     return doctype + body

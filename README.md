@@ -5,5 +5,6 @@ A Python 3 Flask application for the creation of podcast RSS feeds.
 
 ###Dependencies
 
-python-passlib
+python-passlib (bcrypt library for password hashing)
 mutagenx (mutagen, but Py3 compatible.)
+lxml (XML pretty printing)
