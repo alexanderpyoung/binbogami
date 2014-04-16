@@ -30,11 +30,15 @@ def serve_xml(castname):
             "select * from podcasts_casts where podcast=(?) order by date desc",
             [cast_meta[0]]
         ).fetchall()
-        return build_xml(cast_meta, episodes)
+        name = g.sqlite_db.execute(
+            "select name from users where id=(?)",
+            [cast_meta[1]]
+        ).fetchone()
+        return build_xml(cast_meta, episodes, name)
     else:
         return "No such cast."
         
-def build_xml(meta, casts):
+def build_xml(meta, casts, name):
     #General XML structure
     encoded_feed_url = request.url_root + quote(meta[2]) + "/feed"
     cast_img_list = meta[5].rsplit("/")
@@ -65,6 +69,7 @@ def build_xml(meta, casts):
     podcast_image_link = ET.SubElement(podcast_image, 'link')
     podcast_image_width = ET.SubElement(podcast_image, 'width')
     podcast_image_height = ET.SubElement(podcast_image, 'height')
+    podcast_image_title = ET.SubElement(podcast_image, 'title')
     podcast_copyright = ET.SubElement(channel, 'copyright')
     podcast_generator = ET.SubElement(channel, 'generator')
     
@@ -76,8 +81,21 @@ def build_xml(meta, casts):
     podcast_image_link.text = meta[4]
     podcast_image_width.text = '144'
     podcast_image_height.text = '144'
+    podcast_image_title.text = meta[2]
     podcast_copyright.text = "Licensed under the Open Audio License."
     podcast_generator.text = "Binbogami"
+    
+    #iTunes tags
+    podcast_itunes_author = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}author')
+    podcast_itunes_subtitle = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}subtitle')
+    podcast_itunes_category = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}category')
+    podcast_itunes_image = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}image')
+        
+    #iTunes population
+    podcast_itunes_author.text = name[0]
+    podcast_itunes_subtitle.text = meta[3]
+    podcast_itunes_category.text = meta[6]
+    podcast_itunes_image.text = request.url_root + "image/" + cast_img
     
     #now for the items for each podcast. Thankfully fucking iterable.
     for cast in casts:

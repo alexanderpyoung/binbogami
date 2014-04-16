@@ -14,6 +14,13 @@
 				<dd><input type="text" size=30 name="url">
 				<dt>Image:
 				<dd><input type="file" size=30 name="img">
+				<dt>Categories:
+				<dd>
+					<select name="category">
+					{% for category in itunes_categories %}
+					<option type="checkbox"value="{{ category }}">{{ category }}</option>
+					{% endfor %}
+					</select>
                 <dd><input type="submit" value="Add podcast">
             </dl>
         </form>

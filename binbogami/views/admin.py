@@ -9,6 +9,33 @@ from mutagenx.oggspeex import OggSpeex
 
 admin = Blueprint("admin", __name__, template_folder="templates")
 
+#itunes_categories = ["Arts", "Design", "Fashion &amp; Beauty", "Food", 
+#                     "Literature", "Performing Arts", "Visual Arts",
+#                     "Business", "Business News", "Careers", "Investing",
+#                     "Management &amp; Marketing", "Shopping", "Comedy",
+#                     "Education", "Education Technology", "Higher Education",
+#                     "K-12", "Language Courses", "Training", "Games &amp; Hobbies",
+#                     "Automotive", "Aviation", "Hobbies", "Other Games", 
+#                     "Video Games", "Government &amp; Organizations", "Local",
+#                     "National", "Non-Profit", "Regional", "Health",
+#                     "Alternative Health", "Fitness &amp; Nutrition", "Self-Help",
+#                     "Sexuality", "Kids &amp; Family", "Music", "News &amp; Politics",
+#                     "Region &amp; Spirituality", "Buddhism", "Christianity",
+#                     "Hinduism", "Islam", "Judaism", "Spirituality",
+#                     "Science &amp; Medicine", "Medicine", "Natural Sciences",
+#                     "Social Sciences", "Society &amp; Culture", "History",
+#                     "Personal Journals", "Philosophy", "Places &amp; Travel",
+#                     "Sports &amp; Recreation", "Amateur", "College &amp; High School",
+#                     "Outdoor", "Professsional", "Technology", "Gadgets", "Tech News",
+#                     "Podcasting", "Software How-To", "TV &amp; Film"]
+
+itunes_categories = [
+    "Arts", "Business", "Comedy", "Education", "Games & Hobbies",
+    "Government & Organizations", "Health", "Kids & Family",
+    "Music", "News & Politics", "Religion & Spirituality", "Science & Medicine",
+    "Society & Culture", "Sports & Recreation", "Technology", "TV & Film"
+]
+
 @admin.route("/admin")
 def show_casts():
     if 'username' in session:
@@ -48,7 +75,7 @@ def show_eps(castname):
 def new_cast():
     if 'username' in session:    
         if request.method == "GET":
-            return render_template("podcasts_new.html")
+            return render_template("podcasts_new.html", itunes_categories=itunes_categories)
         elif request.method == "POST":
             #only one podcast for each name on the server; owner doesn't matter
             query = g.sqlite_db.execute("select name from podcasts_header where name=(?)",
@@ -58,7 +85,7 @@ def new_cast():
             #.fetchone() returns None where no results are found; .fetchall() an empty list.
             if result == None:
                 img = request.files['img']
-                if img:
+                if len(img.filename) != 0:
                     if img.filename.rsplit(".", 1)[1] in ["jpg", "jpeg", "gif", "png"]:
                         filename = request.form['castname'] + "." + \
                             img.filename.rsplit(".", 1)[1] 
@@ -69,9 +96,10 @@ def new_cast():
                         )
                         img.save(imgpath)
                         g.sqlite_db.execute(
-                            "insert into podcasts_header (owner, name, description, url, image) values (?,?,?,?,?)", 
+                            "insert into podcasts_header (owner, name, description, url, image, categories) values (?,?,?,?,?,?)", 
                             [session['uid'],request.form['castname'],
-                            request.form['description'], request.form['url'], imgpath]
+                            request.form['description'], request.form['url'], 
+                            imgpath, request.form['category']]
                         )
                         g.sqlite_db.commit()
                     else:
@@ -81,7 +109,7 @@ def new_cast():
                 return redirect(url_for('admin.show_casts'))
             else:
                 error = "You already have a podcast by that name."
-                return render_template("podcasts_new.html", error=error)
+                return render_template("podcasts_new.html", error=error, itunes_categories=itunes_categories)
     else:
         #TODO: implement this in a prettier manner.
         abort(401)
@@ -92,11 +120,14 @@ def edit_cast(castname):
         podcastid = get_id("id, name", castname, session['uid'])
         if request.method == "GET":
             if podcastid != None:
-                cast_details = get_id("id, owner, name, description, url, image", castname, session['uid'])
+                cast_details = get_id("id, owner, name, description, url, image, categories", castname, session['uid'])
                 cast_img_list = cast_details[5].rsplit("/")
                 cast_img = cast_img_list[len(cast_img_list)-1]
                 cast_img_url = request.url_root + "image/" + cast_img
-                return render_template("podcasts_edit.html", cast_details=cast_details, cast_img_url=cast_img_url)
+                return render_template(
+                    "podcasts_edit.html", cast_details=cast_details, 
+                    cast_img_url=cast_img_url, itunes_categories=itunes_categories
+                    )
             else:
                 abort(401)
         elif request.method == "POST":
@@ -113,9 +144,9 @@ def edit_cast(castname):
                         )
                         img.save(imgpath)
                         g.sqlite_db.execute(
-                            "update podcasts_header set name=(?), description=(?), url=(?), image=(?) where id=(?)",
+                            "update podcasts_header set name=(?), description=(?), url=(?), image=(?), categories=(?) where id=(?)",
                             [request.form['castname'], request.form['description'],
-                            request.form['url'], imgpath, podcastid[0]]
+                            request.form['url'], imgpath, request.form['category'], podcastid[0]]
                         )
                         g.sqlite_db.commit()
                         return redirect(url_for('admin.show_casts'))
@@ -123,9 +154,9 @@ def edit_cast(castname):
                         return "Unsupported image filetype."
                 else:
                     g.sqlite_db.execute(
-                        "update podcasts_header set name=(?), description=(?), url=(?) where id=(?)",
+                        "update podcasts_header set name=(?), description=(?), url=(?), categories=(?) where id=(?)",
                         [request.form['castname'], request.form['description'],
-                        request.form['url'], podcastid[0]]
+                        request.form['url'], request.form['category'], podcastid[0]]
                     )
                     g.sqlite_db.commit()
                     return redirect(url_for('admin.show_casts'))
