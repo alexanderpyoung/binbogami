@@ -114,7 +114,7 @@ def new_cast():
         #TODO: implement this in a prettier manner.
         abort(401)
   
-@admin.route("/admin/<castname>/edit", methods=['GET', 'POST'])
+@admin.route("/admin/edit/<castname>", methods=['GET', 'POST'])
 def edit_cast(castname):
     if 'username' in session:
         podcastid = get_id("id, name", castname, session['uid'])
@@ -132,6 +132,26 @@ def edit_cast(castname):
                 abort(401)
         elif request.method == "POST":
             if podcastid != None:
+                if request.form['castname'] != podcastid[1]:
+                    episodes = g.sqlite_db.execute(
+                        "select id, castfile from podcasts_casts where podcast=(?)",
+                        [podcastid[0]]
+                    ).fetchall()
+                    if len(episodes) != 0:
+                        for episode in episodes:
+                            filename_rhs_list = episode[1].rsplit("-_")
+                            filename_rhs = filename_rhs_list[len(filename_rhs_list)-1]
+                            filename = secure_filename(request.form['castname'] + " - " + filename_rhs)
+                            filepath = os.path.join(
+                                current_app.config['UPLOAD_FOLDER'],
+                                filename
+                            )
+                            os.rename(episode[1], filepath)
+                            g.sqlite_db.execute(
+                                "update podcasts_casts set castfile=(?) where id=(?)",
+                                [filepath, episode[0]]
+                            )
+                            g.sqlite_db.commit()
                 img = request.files['img']
                 if len(img.filename) != 0:
                     if img.filename.rsplit(".", 1)[1] in ["jpg", "jpeg", "gif", "png"]:
@@ -225,36 +245,14 @@ def new_ep(castname):
                     [request.form['epname'], podcastid[0]]
                 )
                 result = query.fetchone()
-                if ep and allowed_file(ep.filename) and result == None:
-                    file_ext = ep.filename.rsplit('.', 1)[1]
-                    new_filename = castname + " - " + request.form['epname'] + "." + file_ext                
-                    filename = secure_filename(new_filename) 
-                    filepath = os.path.join(
-                                current_app.config["UPLOAD_FOLDER"], 
-                                filename
-                                )
-                    ep.save(filepath)
-                    if file_ext == "mp3":
-                        file_length = MP3(filepath).info.length
-                    elif file_ext == "ogg":
-                        file_length = OggVorbis(filepath).info.length
-                    elif file_ext == "spx":
-                        file_length = OggSpeex(filepath).info.length
-                    elif file_ext == "opus":
-                        file_length = OggOpus(filepath).info.length
-                    else:
-                        print("no idea what happened here")
-                    g.sqlite_db.execute(
-                        "insert into podcasts_casts (podcast, title, description, castfile, date, length, filetype) values (?,?,?,?, datetime('now'),?,?)",
-                        [
-                            podcastid[0], request.form['epname'], 
-                            request.form['description'], filepath,
-                            file_length, file_ext
-                        ]
+                if ep and allowed_file(ep.filename) and result == None \
+                and len(ep.filename) != 0:
+                    cast_upload(
+                        ep, podcastid, request.form["epname"], request.form['description'], "new"
                     )
-                    g.sqlite_db.commit()
-                
                     return "Success."
+                elif len(ep.filename) == 0:
+                    return "No cast uploaded."
                 elif not allowed_file(ep.filename):
                     return "File type not allowed."
                 elif result != None:
@@ -267,6 +265,93 @@ def new_ep(castname):
 def allowed_file(filename):
     return '.' in filename and \
         filename.rsplit('.', 1)[1] in ["mp3", "ogg", "opus", "spx"]
+
+def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
+    file_ext = ep_file.filename.rsplit('.', 1)[1]
+    new_filename = podcast[1] + " - " + ep_name + "." + file_ext                
+    filename = secure_filename(new_filename) 
+    filepath = os.path.join(
+                current_app.config["UPLOAD_FOLDER"], 
+                filename
+                )
+    ep_file.save(filepath)
+    if file_ext == "mp3":
+        file_length = MP3(filepath).info.length
+    elif file_ext == "ogg":
+        file_length = OggVorbis(filepath).info.length
+    elif file_ext == "spx":
+        file_length = OggSpeex(filepath).info.length
+    elif file_ext == "opus":
+        file_length = OggOpus(filepath).info.length
+    else:
+        return "This shouldn't happen"
+    
+    if neworedit == "new":
+        g.sqlite_db.execute(
+            "insert into podcasts_casts (podcast, title, description, castfile, date, length, filetype) values (?,?,?,?, datetime('now'),?,?)",
+            [
+                podcast[0], ep_name, 
+                ep_description, filepath,
+                file_length, file_ext
+            ]
+        )
+        g.sqlite_db.commit()
+    else:
+        g.sqlite_db.execute(
+            "update podcasts_casts set castfile=(?), length=(?), filetype=(?) where title=(?)",
+            [filepath, file_length, file_ext, ep_name])
+        g.sqlite_db.commit()
+    
+@admin.route("/admin/edit/<castname>/<epname>", methods=["POST", "GET"])
+def edit_ep(castname,epname):
+    if 'username' in session:
+        podcastid = get_id("id, name, owner", castname, session['uid'])
+        cast = g.sqlite_db.execute(
+            "select id, podcast, title, description, castfile, filetype from podcasts_casts where title=(?)",
+            [epname]
+        ).fetchone()
+        if request.method == "GET":
+            if cast != None:
+                return render_template("ep_edit.html", podcastid=podcastid, cast=cast)
+            else:
+                return "No such episode."
+        if request.method == "POST":
+            if podcastid != None:
+                ep = request.files['castfile']
+                cast_name_check = g.sqlite_db.execute(
+                    "select id from podcasts_casts where title=(?)",
+                    [request.form['epname']]
+                ).fetchone()
+                if cast_name_check == None or (cast_name_check != None \
+                and request.form['epname'] == cast[2]):
+                    if len(ep.filename) == 0:
+                        filename = secure_filename(castname + " - " + request.form['epname'] + "." + cast[5])
+                        filepath = os.path.join(
+                            current_app.config["UPLOAD_FOLDER"],
+                            filename
+                        )
+                        os.rename(cast[4], filepath)
+                        g.sqlite_db.execute(
+                            "update podcasts_casts set castfile=(?) where id=(?)",
+                            [filepath, cast[0]]
+                        )
+                        g.sqlite_db.commit()
+                    else:
+                        try:
+                            os.remove(cast[4])
+                        except FileNotFoundError:
+                            pass
+                        cast_upload(ep, podcastid, request.form['epname'], request.form['description'], "edit")
+                    g.sqlite_db.execute(
+                        "update podcasts_casts set title=(?), description=(?) where id=(?)",
+                        [request.form['epname'], request.form['description'], cast[0]]
+                    )
+                    g.sqlite_db.commit()
+                    return "Success."
+                else:
+                    return "Already have a podcast by that name."
+    else:
+        abort(401)
         
 @admin.route("/admin/delete/<castname>/<epname>")
 def delete_ep(castname, epname):
