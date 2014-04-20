@@ -49,6 +49,10 @@ def init_db():
             except sqlite3.OperationalError as e:
                 print("{!r}".format(e))
         db.commit()
+        
+@bbgapp.errorhandler(401)
+def error_401(e):
+    return render_template('401.html'), 401
 
 bbgapp.register_blueprint(frontpage)
 bbgapp.register_blueprint(register)

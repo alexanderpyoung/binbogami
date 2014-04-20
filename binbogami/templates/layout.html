@@ -1,5 +1,22 @@
 <html>
     <head>{% block head %}{% endblock %}<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}" />
     </head>
-    <body>{% block body %}{% endblock %}</body>
+    <body>
+		<div class="colourone">
+			<div class="container">
+				<div class="topbar" style="float:left">
+					<div class="topbar-text">
+						<a href="/"><img src="{{ url_for('static', filename='logo.png') }}"/></a>
+					</div>
+				</div>
+				<div class="topbar" style="float:right">
+					Home | Admin
+				</div>
+			</div>
+		</div>
+		<div class="container">
+		{% block body %}
+		{% endblock %}
+			</div>
+	</body>
 </html>

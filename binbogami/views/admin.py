@@ -44,8 +44,13 @@ def show_casts():
         rows = casts.fetchall()
         list = None
         if rows != []:
-            list = rows
-        return render_template("podcast_admin.html", list=list, nocast="No casts.")
+            list = []
+            for items in rows:
+                imgurlsplit = items[3].rsplit("/")
+                imgurl = imgurlsplit[len(imgurlsplit)-1]
+                list.append((items[0], items[1], items[2], imgurl))
+        return render_template("podcast_admin.html", list=list, 
+                                nocast="No casts.", friendly_name=session['name'])
     else:
         #TODO: implement this in a prettier manner.
         abort(401)

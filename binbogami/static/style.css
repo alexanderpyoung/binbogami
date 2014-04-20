@@ -1,0 +1,51 @@
+body {
+	width: 100%;
+	padding: 0px;
+	margin: 0px;
+	font: 12pt Arial;
+}
+
+.container {
+	width: 1500px;
+	margin-left: -750px;
+	position: relative;
+	left: 50%;
+	height: 100px;
+
+}
+
+.colourone {
+	background: #005C1F;
+	width: 100%;
+	margin-bottom: 20px;
+}
+
+.topbar {
+	font: 24pt Arial;
+	line-height: 100px;	
+}
+
+.topbar-text {
+	vertical-align: middle;
+}
+
+.topbar-text img {
+	vertical-align: middle;
+}
+
+table.podcast-table {
+	width: 100%;
+}
+
+tr.podcast-row {
+	height: 100px;
+	vertical-align: middle;
+}
+
+.podcast-name {
+	font-weight: bold;
+}
+
+.podcast-image img {
+	height: 100px;
+}
