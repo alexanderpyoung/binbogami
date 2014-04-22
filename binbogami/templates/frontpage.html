@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block head %}
+	<title>Binbogami</title>
+{% endblock %}
+{% block body %}
+{% if user %}
+Hello, {{user}}!
+{% endif %}
+{% endblock %}

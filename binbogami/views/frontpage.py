@@ -1,11 +1,11 @@
-from flask import Blueprint, session, escape
+from flask import Blueprint, session, escape, render_template
 
 frontpage = Blueprint("frontpage",__name__,
                       template_folder="templates")
 
 @frontpage.route("/")
 def index():
-    if 'username' in session:
-        return "Hello, %s!" % escape(session['name'])
+    if 'name' in session: 
+        return render_template("frontpage.html", user=session['name'])
     else:
-        return "Hello, world!"
+        return render_template("frontpage.html")
