@@ -42,14 +42,14 @@ def show_casts():
         casts = g.sqlite_db.execute("select name, description, url, image, id from podcasts_header where owner=(?)",
                                     session['uid'])
         rows = casts.fetchall()
-        list = None
+        cast_list = None
         if rows != []:
-            list = []
+            cast_list = []
             for items in rows:
                 imgurlsplit = items[3].rsplit("/")
                 imgurl = imgurlsplit[len(imgurlsplit)-1]
                 list.append((items[0], items[1], items[2], imgurl))
-        return render_template("podcast_admin.html", list=list, 
+        return render_template("podcast_admin.html", list=cast_list, 
                                 nocast="No casts.", friendly_name=session['name'])
     else:
         #TODO: implement this in a prettier manner.
@@ -64,11 +64,11 @@ def show_eps(castname):
                 "select title, description, castfile from podcasts_casts where podcast=(?)",
                 [podcastid[0]]
             ).fetchall()
-            list = None
+            list_template = None
             if eps != []:
-                list = eps
+                list_template = eps
             return render_template(
-                "ep_admin.html", podcastid=podcastid, list=list, 
+                "ep_admin.html", podcastid=podcastid, list=list_template, 
                 noep="No episodes.", castname=castname
             )
         else:
@@ -196,7 +196,6 @@ def edit_cast(castname):
 def delete_cast(castname):
     if 'username' in session:
         # 1) Does the podcast exist? 2) Does it belong to the logged in user?
-        #TODO: Delete coverart.
         podcastid = get_id("id", castname, session['uid'])
         if podcastid != None:
             # Get and delete files

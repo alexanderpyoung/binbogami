@@ -1,5 +1,3 @@
-#TODO: Remove distinction between incorrect username and password
-
 from flask import g, session, render_template, Blueprint, request, redirect
 from flask import url_for
 from passlib.hash import bcrypt
@@ -16,7 +14,7 @@ def login():
                                     [request.form["username"]])
         row = user.fetchone()
         if row == None:
-            error = "No such user."
+            error = "Incorrect username and password, please try again."
             return render_template("login.html", error=error)
         else:
             if bcrypt.verify(request.form["password"], row[3]):
@@ -25,7 +23,7 @@ def login():
                 session['name'] = row[2]
                 return redirect(url_for('admin.show_casts'))
             else:
-                error = "Bad password."
+                error = "Incorrect username and password, please try again."
                 return render_template("login.html", error=error)
 
 @log.route("/logout")

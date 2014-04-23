@@ -1,4 +1,4 @@
-from flask import Blueprint, session, escape, render_template
+from flask import Blueprint, session, render_template
 
 frontpage = Blueprint("frontpage",__name__,
                       template_folder="templates")
