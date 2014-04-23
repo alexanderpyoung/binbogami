@@ -79,3 +79,11 @@ body {
 .podcast-image img {
 	height: 100px;
 }
+
+a, a:hover, a:visited, a:active {
+	color: #005C1F;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
