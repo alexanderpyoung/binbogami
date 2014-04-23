@@ -7,6 +7,7 @@ from mutagenx.mp3 import MP3
 from mutagenx.oggvorbis import OggVorbis
 from mutagenx.oggopus import OggOpus
 from mutagenx.oggspeex import OggSpeex
+from PIL import Image
 
 admin = Blueprint("admin", __name__, template_folder="templates")
 
@@ -92,27 +93,16 @@ def new_cast():
             if result == None:
                 img = request.files['img']
                 if len(img.filename) != 0:
-                    if img.filename.rsplit(".", 1)[1] in ["jpg", "jpeg", "gif", "png"]:
-                        filename = request.form['castname'] + "." + \
-                            img.filename.rsplit(".", 1)[1] 
-                        safe_filename = secure_filename(filename)
-                        imgpath = os.path.join(
-                                current_app.config["UPLOAD_FOLDER"],
-                                safe_filename
-                        )
-                        img.save(imgpath)
-                        g.sqlite_db.execute(
-                            "insert into podcasts_header (owner, name, description, url, image, categories) values (?,?,?,?,?,?)", 
-                            [session['uid'],request.form['castname'],
-                            request.form['description'], request.form['url'], 
-                            imgpath, request.form['category']]
-                        )
-                        g.sqlite_db.commit()
+                    img_upload = image_upload(img, None, "new")
+                    print(img_upload)
+                    if img_upload == 0:
+                        return redirect(url_for('admin.show_casts'))
+                    elif img_upload == 1:
+                        return "Incorrect file size."
                     else:
-                        return "File not recognised format."
+                        return "Incorrect file type."
                 else:
                     return "No image uploaded."
-                return redirect(url_for('admin.show_casts'))
             else:
                 error = "You already have a podcast by that name."
                 return render_template("podcasts_new.html", error=error, itunes_categories=itunes_categories)
@@ -123,7 +113,7 @@ def new_cast():
 @admin.route("/admin/edit/<castname>", methods=['GET', 'POST'])
 def edit_cast(castname):
     if 'username' in session:
-        podcastid = get_id("id, name", castname, session['uid'])
+        podcastid = get_id("id, name, image", castname, session['uid'])
         if request.method == "GET":
             if podcastid != None:
                 cast_details = get_id("id, owner, name, description, url, image, categories", castname, session['uid'])
@@ -160,24 +150,13 @@ def edit_cast(castname):
                             g.sqlite_db.commit()
                 img = request.files['img']
                 if len(img.filename) != 0:
-                    if img.filename.rsplit(".", 1)[1] in ["jpg", "jpeg", "gif", "png"]:
-                        filename = request.form['castname'] + "." + \
-                            img.filename.rsplit(".", 1)[1] 
-                        safe_filename = secure_filename(filename)
-                        imgpath = os.path.join(
-                                current_app.config["UPLOAD_FOLDER"],
-                                safe_filename
-                        )
-                        img.save(imgpath)
-                        g.sqlite_db.execute(
-                            "update podcasts_header set name=(?), description=(?), url=(?), image=(?), categories=(?) where id=(?)",
-                            [request.form['castname'], request.form['description'],
-                            request.form['url'], imgpath, request.form['category'], podcastid[0]]
-                        )
-                        g.sqlite_db.commit()
+                    img_upload = image_upload(img, podcastid, "edit")
+                    if img_upload == 0:
                         return redirect(url_for('admin.show_casts'))
+                    elif img_upload == 1:
+                        return "Image incorrect size."
                     else:
-                        return "Unsupported image filetype."
+                        return "Image incorrect format."
                 else:
                     g.sqlite_db.execute(
                         "update podcasts_header set name=(?), description=(?), url=(?), categories=(?) where id=(?)",
@@ -241,7 +220,10 @@ def new_ep(castname):
     if 'username' in session:
         podcastid = get_id("id, name, owner", castname, session['uid'])
         if request.method == "GET":
-            return render_template("ep_new.html", podcastid=podcastid)
+            if podcastid != None:
+                return render_template("ep_new.html", podcastid=podcastid)
+            else:
+                return "This cast does not exist, or you do not own it."
         elif request.method == "POST":
             if podcastid != None:
                 ep = request.files['castfile']
@@ -306,6 +288,46 @@ def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
             "update podcasts_casts set castfile=(?), length=(?), filetype=(?) where title=(?)",
             [filepath, file_length, file_ext, ep_name])
         g.sqlite_db.commit()
+        
+def image_upload(img, meta_array, neworedit):
+    PIL_img = Image.open(img)
+    if img.filename.rsplit(".", 1)[1] in ["jpg", "jpeg", "gif", "png"]:
+        if PIL_img.size[0] == 1400 and PIL_img.size[1] == 1400:
+            filename = request.form['castname'] + "." + \
+                img.filename.rsplit(".", 1)[1] 
+            safe_filename = secure_filename(filename)
+            imgpath = os.path.join(
+                    current_app.config["UPLOAD_FOLDER"],
+                    safe_filename
+            )
+            #PIL does something to the request.files object - have to use that here
+            if neworedit == "edit":
+                try:
+                    os.remove(meta_array[2])
+                except FileNotFoundError:
+                    pass
+                g.sqlite_db.execute(
+                    "update podcasts_header set name=(?), description=(?), url=(?), image=(?), categories=(?) where id=(?)",
+                    [request.form['castname'], request.form['description'],
+                    request.form['url'], imgpath, request.form['category'], meta_array[0]]
+                )
+                g.sqlite_db.commit()
+            elif neworedit == "new":
+                g.sqlite_db.execute(
+                    "insert into podcasts_header (owner, name, description, url, image, categories) values (?,?,?,?,?,?)", 
+                    [session['uid'],request.form['castname'],
+                    request.form['description'], request.form['url'], 
+                    imgpath, request.form['category']]
+                )
+                g.sqlite_db.commit()
+            else:
+                return "This should not happen."
+            PIL_img.save(imgpath)
+            return 0
+        else:
+            return 1
+    else:
+        return 2
     
 @admin.route("/admin/edit/<castname>/<epname>", methods=["POST", "GET"])
 def edit_ep(castname,epname):
