@@ -2,6 +2,7 @@ import os
 from flask import Blueprint, g, session, render_template, abort, request, redirect
 from flask import url_for, current_app
 from werkzeug.utils import secure_filename
+from binbogami.views.register import hash_password
 from mutagenx.mp3 import MP3
 from mutagenx.oggvorbis import OggVorbis
 from mutagenx.oggopus import OggOpus
@@ -392,3 +393,31 @@ def get_id(query, castname, owner):
         [castname, owner]
     )
     return getid.fetchone()
+    
+@admin.route("/admin/user", methods=["GET", "POST"])
+def user_admin():
+    if 'username' in session:
+        if request.method == "GET":
+            user = g.sqlite_db.execute(
+                "select username, name from users where id=(?)",
+                [session['uid']]
+            ).fetchone()
+            return render_template("user_admin.html", user=user)
+        else:
+            if len(request.form['password']) == 0:
+                g.sqlite_db.execute(
+                    "update users set username=(?), name=(?) where id=(?)",
+                    [request.form['username'], request.form['name'],
+                    session['uid']]
+                )
+            else:
+                password = hash_password(request.form['password'])
+                g.sqlite_db.execute(
+                    "update users set username=(?), name=(?), pwhash=(?) where id=(?)",
+                    [request.form['username'], request.form['name'], password,
+                    session['uid']]
+                )
+            g.sqlite_db.commit()
+            return redirect(url_for('frontpage.index'))
+    else:
+        abort(401)

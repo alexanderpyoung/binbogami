@@ -14,8 +14,7 @@ def reg():
         if len(userexist.fetchall()) != 0:
             error = "Username already in use."
         else:
-            pw2bytes = request.form['password'].encode("utf-8")
-            passwordhashed = bcrypt.encrypt(pw2bytes)
+            hash_password(request.form['password'])
             g.sqlite_db.execute(
                 "insert into users (username, name, pwhash) values (?, ?, ?)",
                 [request.form['username'], request.form['name'], passwordhashed]
@@ -25,3 +24,7 @@ def reg():
             
     return render_template("register.html", error=error, success=success)
 
+def hash_password(password):
+    pw2bytes = password.encode("utf-8")
+    hashed_password = bcrypt.encrypt(pw2bytes)
+    return hashed_password
