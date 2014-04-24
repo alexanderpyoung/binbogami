@@ -4,7 +4,8 @@
 {% endblock %}
 {% block body %}
         {% if error %}<p style="color:red">Error: {{error}}</p> {% endif %}
-        <form action="{{ url_for('admin.new_cast') }}" method="POST" enctype="multipart/form-data">
+<div id="map"><a href="{{ url_for('admin.show_casts') }}">Cast Administration</a> &raquo; New cast</div>
+        <div id="form"><form action="{{ url_for('admin.new_cast') }}" method="POST" enctype="multipart/form-data">
             <dl>
                 <dt>Name: 
                 <dd><input type="text" size=30 name="castname" />
@@ -23,5 +24,5 @@
 					</select>
                 <dd><input type="submit" value="Add podcast">
             </dl>
-        </form>
+        </form></div>
 {% endblock %}

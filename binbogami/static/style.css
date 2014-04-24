@@ -6,31 +6,38 @@ body {
 }
 
 .container {
-	width: 1500px;
-	margin-left: -750px;
+	width: 900px;
+	margin-left: -450px;
 	position: relative;
 	left: 50%;
-	height: 100px;
-
 }
 
 .colourone {
 	background: #005C1F;
 	width: 100%;
 	margin-bottom: 20px;
+	line-height: 100px;
+	height: 100px;
 }
 
 .topbar {
-	font: 24pt Arial;
-	line-height: 100px;	
+	line-height: 100px;
+	position: relative;
+	top: 5px;
+} 
+
+.topbar img {
+
 }
 
-.topbar-text {
-	vertical-align: middle;
+#nav {
+	font: 16pt Arial;
+	height: 100px;
+	line-height: 100px;
 }
 
-.topbar-text img {
-	vertical-align: middle;
+#nav a {
+	color: #FFFFFF;
 }
 
 .podcast-table {

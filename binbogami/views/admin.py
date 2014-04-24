@@ -1,4 +1,5 @@
 import os
+from re import match
 from flask import Blueprint, g, session, render_template, abort, request, redirect
 from flask import url_for, current_app
 from werkzeug.utils import secure_filename
@@ -63,12 +64,15 @@ def show_eps(castname):
         podcastid = get_id("id, name", castname, session['uid'])
         if podcastid != None:
             eps = g.sqlite_db.execute(
-                "select title, description, castfile from podcasts_casts where podcast=(?)",
+                "select title, description, castfile, filetype from podcasts_casts where podcast=(?)",
                 [podcastid[0]]
             ).fetchall()
-            list_template = None
+            list_template = []
             if eps != []:
-                list_template = eps
+                for ep in eps:
+                    cast_url = url_for("serve.serve_file", castname=podcastid[1],
+                                        epname=ep[0]) + "." + ep[3]
+                    list_template.append((ep[0], ep[1], cast_url))
             return render_template(
                 "ep_admin.html", podcastid=podcastid, list=list_template, 
                 noep="No episodes.", castname=castname
@@ -91,6 +95,9 @@ def new_cast():
             result = query.fetchone()
             #.fetchone() returns None where no results are found; .fetchall() an empty list.
             if result == None:
+                if validate_url(request.form['url']) == 1:
+                    return render_template("podcasts_new.html", error="You did not supply a valid URL.",
+                                            itunes_categories=itunes_categories)
                 img = request.files['img']
                 if len(img.filename) != 0:
                     img_upload = image_upload(img, None, "new")
@@ -114,12 +121,12 @@ def new_cast():
 def edit_cast(castname):
     if 'username' in session:
         podcastid = get_id("id, name, image", castname, session['uid'])
+        cast_details = get_id("id, owner, name, description, url, image, categories", castname, session['uid'])
+        cast_img_list = cast_details[5].rsplit("/")
+        cast_img = cast_img_list[len(cast_img_list)-1]
+        cast_img_url = request.url_root + "image/" + cast_img
         if request.method == "GET":
             if podcastid != None:
-                cast_details = get_id("id, owner, name, description, url, image, categories", castname, session['uid'])
-                cast_img_list = cast_details[5].rsplit("/")
-                cast_img = cast_img_list[len(cast_img_list)-1]
-                cast_img_url = request.url_root + "image/" + cast_img
                 return render_template(
                     "podcasts_edit.html", cast_details=cast_details, 
                     cast_img_url=cast_img_url, itunes_categories=itunes_categories
@@ -128,6 +135,11 @@ def edit_cast(castname):
                 abort(401)
         elif request.method == "POST":
             if podcastid != None:
+                if validate_url(request.form['url']) == 1:
+                    return render_template("podcasts_edit.html", error="You did not supply a valid URL.",
+                                            itunes_categories=itunes_categories,
+                                            cast_details=cast_details, 
+                                            cast_img_url=cast_img_url)
                 if request.form['castname'] != podcastid[1]:
                     episodes = g.sqlite_db.execute(
                         "select id, castfile from podcasts_casts where podcast=(?)",
@@ -322,6 +334,9 @@ def image_upload(img, meta_array, neworedit):
                 g.sqlite_db.commit()
             else:
                 return "This should not happen."
+            # opening the request.files object (Werkzeug FileStorage) with PIL
+            # does "something" to it - won't save from that function. Works
+            # with PIL, though.
             PIL_img.save(imgpath)
             return 0
         else:
@@ -415,6 +430,14 @@ def get_id(query, castname, owner):
         [castname, owner]
     )
     return getid.fetchone()
+    
+def validate_url(url):
+    regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    is_it_a_url = match(regex, url)
+    if is_it_a_url == None:
+        return 1
+    else:
+        return 0
     
 @admin.route("/admin/user", methods=["GET", "POST"])
 def user_admin():

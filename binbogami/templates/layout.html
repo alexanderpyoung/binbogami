@@ -5,12 +5,10 @@
 		<div class="colourone">
 			<div class="container">
 				<div class="topbar" style="float:left">
-					<div class="topbar-text">
-						<a href="/"><img src="{{ url_for('static', filename='logo.png') }}"/></a>
-					</div>
+					<a href="/"><img src="{{ url_for('static', filename='logo.png') }}"/></a>
 				</div>
-				<div class="topbar" style="float:right">
-					Home | Admin
+				<div id="nav" style="float:right">
+					<a href="{{ url_for('frontpage.index') }}">home</a> <a href="{{ url_for('admin.show_casts') }}">admin</a>
 				</div>
 			</div>
 		</div>

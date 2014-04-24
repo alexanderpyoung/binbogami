@@ -3,8 +3,9 @@
 	<title>{{ cast_details[2] }} | Edit Podcast</title>
 {% endblock %}
 {% block body %}
+<div id="map"><a href="{{ url_for('admin.show_casts') }}">Cast Administration</a> &raquo; <a href="{{ url_for('admin.show_eps', castname=cast_details[2]) }}">{{ cast_details[2] }}</a> &raquo; Edit cast details</div>
         {% if error %}<p style="color:red">Error: {{error}}</p> {% endif %}
-        <form action="{{ url_for('admin.edit_cast', castname=cast_details[2]) }}" method="POST" enctype="multipart/form-data">
+        <div id="form"><form action="{{ url_for('admin.edit_cast', castname=cast_details[2]) }}" method="POST" enctype="multipart/form-data">
             <dl>
                 <dt>Name: 
                 <dd><input type="text" size=30 name="castname" value="{{ cast_details[2] }}"/>
@@ -23,4 +24,5 @@
                 <dd><input type="submit" value="Submit changes">
             </dl>
         </form>
+	</div>
 {% endblock %}
