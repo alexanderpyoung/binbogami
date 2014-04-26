@@ -4,15 +4,19 @@
     <body>
 		<div class="colourone">
 			<div class="container">
-				<div class="topbar" style="float:left">
+				<div class="banner">
 					<a href="/"><img src="{{ url_for('static', filename='logo.png') }}"/></a>
-				</div>
-				<div id="nav" style="float:right">
-					<a href="{{ url_for('frontpage.index') }}">home</a> <a href="{{ url_for('admin.show_casts') }}">admin</a>
+				<div id="nav">
+					{% if session %}
+					<a href="{{ url_for('frontpage.index') }}">home</a> <a href="{{ url_for('admin.show_casts') }}">admin</a> <a href="{{ url_for('log.logout') }}">log out</a>
+					{% else %}
+					<a href="{{ url_for('frontpage.index') }}">home</a> <a href="{{ url_for('log.login') }}">log in</a> <a href="{{url_for('register.reg')}}">sign up</a>
+					{% endif %}
 				</div>
 			</div>
+			</div>
 		</div>
-		<div class="container">
+
 		{% block body %}
 		{% endblock %}
 			</div>

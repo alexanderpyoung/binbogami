@@ -6,33 +6,48 @@ body {
 }
 
 .container {
-	width: 900px;
-	margin-left: -450px;
-	position: relative;
-	left: 50%;
+	width: 60%;
+	margin: 0px auto;
 }
 
 .colourone {
 	background: #005C1F;
 	width: 100%;
-	margin-bottom: 20px;
-	line-height: 100px;
+	margin-bottom: 0px;
 	height: 100px;
 }
 
-.topbar {
-	line-height: 100px;
-	position: relative;
-	top: 5px;
-} 
+.colourtwo {
+	background: #9EDDB3;
+	width: 100%;
+	padding: 40px 0px;
+}
 
-.topbar img {
+.fp-images {
+	margin: 0px auto;
+	display: table;
+}
 
+.fp-image {
+	width: 28%;
+	text-align: center;
+	padding: 0 20px;
+	display: inline-block;
+}
+
+.fp-image h1 {
+	color: #005C1F;
+}
+
+.fp-image img {
+	width: 100%;
+	padding-bottom: 10px;
 }
 
 #nav {
 	font: 16pt Arial;
-	height: 100px;
+	vertical-align: center;
+	float: right;
 	line-height: 100px;
 }
 
@@ -94,3 +109,59 @@ a, a:hover, a:visited, a:active {
 
 a:hover {
 	text-decoration: underline;
+}
+
+.form-image {
+	height:300px;
+}
+
+dt {
+	padding-top: 10px;
+	padding-bottom:10px;
+}
+
+#form {
+	width: 700px;
+	position: relative;
+	left: 50%;
+	margin-left: -350px;
+}
+
+#form input[type="text"], #form select, #form input[type="password"] {
+	border: 1px solid #EEE;
+	padding: 10px;
+	width: 500px;
+	font: 12pt Arial;
+	-moz-border-radius:15px;
+	border-radius: 15px;
+}
+
+#form input[type="password"]:hover,
+#form input[type="password"]:active,
+#form input[type="text"]:hover,
+#form input[type="text"]:focus,
+#form select:hover,
+#form select:focus {
+	box-shadow: 0 0 10px #4EAE6E;
+}
+
+#map {
+	padding-top:20px;
+}
+
+.front-left, .front-right {
+	width: 49%;
+}
+
+.front-left {
+	float:left;
+}
+
+.front-right {
+	float:right;
+}
+
+.banner {
+	line-height: 100px;
+	vertical-align: middle;
+}

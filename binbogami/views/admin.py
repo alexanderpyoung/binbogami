@@ -1,7 +1,7 @@
 import os
 from re import match
 from flask import Blueprint, g, session, render_template, abort, request, redirect
-from flask import url_for, current_app
+from flask import url_for, current_app, Markup
 from werkzeug.utils import secure_filename
 from binbogami.views.register import hash_password
 from mutagenx.mp3 import MP3
@@ -172,7 +172,7 @@ def edit_cast(castname):
                 else:
                     g.sqlite_db.execute(
                         "update podcasts_header set name=(?), description=(?), url=(?), categories=(?) where id=(?)",
-                        [request.form['castname'], request.form['description'],
+                        [request.form['castname'], Markup(request.form['description']).striptags(),
                         request.form['url'], request.form['category'], podcastid[0]]
                     )
                     g.sqlite_db.commit()
@@ -328,7 +328,7 @@ def image_upload(img, meta_array, neworedit):
                 g.sqlite_db.execute(
                     "insert into podcasts_header (owner, name, description, url, image, categories) values (?,?,?,?,?,?)", 
                     [session['uid'],request.form['castname'],
-                    request.form['description'], request.form['url'], 
+                    Markup(request.form['description']).striptags(), request.form['url'], 
                     imgpath, request.form['category']]
                 )
                 g.sqlite_db.commit()

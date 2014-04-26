@@ -1,8 +1,19 @@
 {% extends "layout.html" %}
 {% block head %}
+	<script src="{{ url_for('static', filename='js/tinymce/tinymce.min.js') }}">
+	</script>
+	<script type="text/javascript">
+	tinymce.init({
+		selector: "textarea",
+		plugins: "textcolor autolink link",
+		toolbar: "undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | print preview media fullpage | forecolor",
+		width: 500
+	});
+	</script>
 	<title>{{ cast_details[2] }} | Edit Podcast</title>
 {% endblock %}
 {% block body %}
+		<div class="container">
 <div id="map"><a href="{{ url_for('admin.show_casts') }}">Cast Administration</a> &raquo; <a href="{{ url_for('admin.show_eps', castname=cast_details[2]) }}">{{ cast_details[2] }}</a> &raquo; Edit cast details</div>
         {% if error %}<p style="color:red">Error: {{error}}</p> {% endif %}
         <div id="form"><form action="{{ url_for('admin.edit_cast', castname=cast_details[2]) }}" method="POST" enctype="multipart/form-data">
@@ -13,10 +24,10 @@
                 <dd><textarea name="description">{{ cast_details[3] }}</textarea>
 				<dt>URL:
 				<dd><input type="text" size=30 name="url" value="{{ cast_details[4] }}" />
-				<dt>Image:
-				<dd><img src="{{ cast_img_url }}">
-				<dd><input type="file" size=30 name="img">
-				<dt>Categories:
+				<dt>Cover art <em>(images must be 1400x1400px in JPEG, PNG or GIF format)</em>:
+				<dd><img class="form-image" src="{{ cast_img_url }}">
+				<input type="file" size=30 name="img" style="vertical-align: middle">
+				<dt>Category:
 				<dd>
 					<select name="category">
 					{% for category in itunes_categories %}{% if category == cast_details[6] %}<option value="{{ category }}" selected>{{ category }}</option>{% else %}<option value="{{ category }}">{{ category }}</option>{% endif %}
@@ -25,4 +36,5 @@
             </dl>
         </form>
 	</div>
+</div>
 {% endblock %}

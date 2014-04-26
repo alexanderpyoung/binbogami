@@ -1,8 +1,19 @@
 {% extends "layout.html" %}
 {% block head %}
+	<script src="{{ url_for('static', filename='js/tinymce/tinymce.min.js') }}">
+	</script>
+	<script type="text/javascript">
+	tinymce.init({
+		selector: "textarea",
+		plugins: "textcolor autolink link",
+		toolbar: "undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | print preview media fullpage | forecolor",
+		width: 500
+	});
+	</script>
 	<title>Add a new Podcast</title>
 {% endblock %}
 {% block body %}
+		<div class="container">
         {% if error %}<p style="color:red">Error: {{error}}</p> {% endif %}
 <div id="map"><a href="{{ url_for('admin.show_casts') }}">Cast Administration</a> &raquo; New cast</div>
         <div id="form"><form action="{{ url_for('admin.new_cast') }}" method="POST" enctype="multipart/form-data">
@@ -13,9 +24,9 @@
                 <dd><textarea name="description">Enter your description here.</textarea>
 				<dt>URL:
 				<dd><input type="text" size=30 name="url">
-				<dt>Image:
+				<dt>Cover art <em>(images must be 1400x1400px in JPEG, PNG or GIF format)</em>:
 				<dd><input type="file" size=30 name="img">
-				<dt>Categories:
+				<dt>Category:
 				<dd>
 					<select name="category">
 					{% for category in itunes_categories %}
@@ -25,4 +36,5 @@
                 <dd><input type="submit" value="Add podcast">
             </dl>
         </form></div>
+</div>
 {% endblock %}

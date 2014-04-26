@@ -28,6 +28,6 @@ def login():
 
 @log.route("/logout")
 def logout():
-    session.pop('username', None)
+    session.clear()
     return redirect(url_for('frontpage.index'))
     

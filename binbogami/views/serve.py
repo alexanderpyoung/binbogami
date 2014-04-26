@@ -1,4 +1,5 @@
-from flask import Blueprint, g, session, send_from_directory, current_app, request
+from flask import Blueprint, g, session, send_from_directory, current_app
+from flask import Markup, request
 from werkzeug.utils import secure_filename
 from binbogami.views.admin import get_id
 from lxml import etree as ET
@@ -131,4 +132,4 @@ def build_xml(meta, casts, name):
     #XML miscellanea
     doctype = '<?xml version="1.0" encoding="utf-8" ?>\n'
     body = ET.tostring(rss, encoding="UTF-8", method="xml", pretty_print="True").decode("utf-8")
-    return doctype + body
+    return Markup(doctype + body)

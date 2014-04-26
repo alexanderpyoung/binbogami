@@ -1,11 +1,22 @@
 {% extends "layout.html" %}
 {% block head %}
 	<title>{{ podcastid[1] }} | Add a new episode</title>
+	<script src="{{ url_for('static', filename='js/tinymce/tinymce.min.js') }}">
+	</script>
+	<script type="text/javascript">
+	tinymce.init({
+		selector: "textarea",
+		plugins: "textcolor autolink link",
+		toolbar: "undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | print preview media fullpage | forecolor",
+		width: 500
+	});
+	</script>
 {% endblock %}
 {% block body %}
+		<div class="container">
         {% if error %}<p style="color:red">Error: {{error}}</p> {% endif %}
 		<div id="map"><a href="{{ url_for('admin.show_casts') }}">Cast Administration</a> &raquo; <a href="{{ url_for('admin.show_eps', castname=podcastid[1]) }}">{{ podcastid[1] }}</a> &raquo; Add new episode to "{{ podcastid[1] }}"</div>
-        <form action="{{ url_for('admin.new_ep', castname=podcastid[1]) }}" method="POST" enctype="multipart/form-data">
+        <div id="form"><form action="{{ url_for('admin.new_ep', castname=podcastid[1]) }}" method="POST" enctype="multipart/form-data">
             <dl>
                 <dt>Episode name: 
                 <dd><input type="text" size=30 name="epname" />
@@ -15,5 +26,6 @@
 				<dd><input type="file" size=30 name="castfile">
                 <dd><input type="submit" value="Add podcast episode">
             </dl>
-        </form>
+        </form></div>
+	</div>
 {% endblock %}

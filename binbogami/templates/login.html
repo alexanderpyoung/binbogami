@@ -4,8 +4,9 @@
 {% endblock %}
 
 {% block body %}
+<div class="container">
         {% if error %}<p style="color:red">Error: {{error}}</p> {% endif %}
-        <form action="{{ url_for('log.login') }}" method="POST">
+        <div id="form"><form action="{{ url_for('log.login') }}" method="POST">
             <dl>
                 <dt>Username: 
                 <dd><input type="text" size=30 name="username" />
@@ -13,5 +14,6 @@
                 <dd><input type="password" size=30 name="password" />
                 <dd><input type="submit" value="Log In">
             </dl>
-        </form>
+        </form></div>
+</div>
 {% endblock %}
