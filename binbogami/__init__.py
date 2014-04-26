@@ -14,7 +14,7 @@ bbgapp.config.update(dict(
     DEBUG=True,
     SECRET_KEY="DEVELOPMENTKEY",
     #CHANGE THIS IN PRODUCTION
-    UPLOAD_FOLDER="/Users/alexander/git/binbogami/files/"
+    UPLOAD_FOLDER="/home/alexander/git/binbogami/files/"
 ))
 
 

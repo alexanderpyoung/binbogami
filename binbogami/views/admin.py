@@ -312,7 +312,13 @@ def image_upload(img, meta_array, neworedit):
                     current_app.config["UPLOAD_FOLDER"],
                     safe_filename
             )
-            #PIL does something to the request.files object - have to use that here
+            # opening the request.files object (Werkzeug FileStorage) with PIL
+            # does "something" to it - won't save from that function. Works
+            # with PIL, though.
+            try:
+                PIL_img.save(imgpath)
+            except:
+                return 3
             if neworedit == "edit":
                 try:
                     os.remove(meta_array[2])
@@ -334,10 +340,6 @@ def image_upload(img, meta_array, neworedit):
                 g.sqlite_db.commit()
             else:
                 return "This should not happen."
-            # opening the request.files object (Werkzeug FileStorage) with PIL
-            # does "something" to it - won't save from that function. Works
-            # with PIL, though.
-            PIL_img.save(imgpath)
             return 0
         else:
             return 1

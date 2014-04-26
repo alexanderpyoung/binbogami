@@ -14,7 +14,7 @@ def reg():
         if len(userexist.fetchall()) != 0:
             error = "Username already in use."
         else:
-            hash_password(request.form['password'])
+            passwordhashed = hash_password(request.form['password'])
             g.sqlite_db.execute(
                 "insert into users (username, name, pwhash) values (?, ?, ?)",
                 [request.form['username'], request.form['name'], passwordhashed]
