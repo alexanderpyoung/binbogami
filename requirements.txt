@@ -1,0 +1,8 @@
+bcrypt
+bleach
+html5lib
+mutagenx
+lxml
+passlib
+flask
+pillow
