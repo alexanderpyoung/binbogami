@@ -13,7 +13,7 @@ def serve_file(castname, epname):
     safe_filename = secure_filename(castname + " - " + epname)
     return send_from_directory(current_app.config['UPLOAD_FOLDER'],
                                                     safe_filename.replace(" ", "_"))
-                                                    
+
 @serve.route("/image/<img_name>")
 def serve_image(img_name):
     img_send = img_name.replace(" ", "_")
@@ -38,21 +38,20 @@ def serve_xml(castname):
         return build_xml(cast_meta, episodes, name)
     else:
         return "No such cast."
-        
+
 def build_xml(meta, casts, name):
     #General XML structure
     encoded_feed_url = request.url_root + quote(meta[2]) + "/feed"
     cast_img_list = meta[5].rsplit("/")
     cast_img = cast_img_list[len(cast_img_list)-1]
     #TODO: Categories; Editorship, TTL; SkipDays/Hours; iTunes?
-    rss = ET.Element('rss', 
+    rss = ET.Element('rss',
                         {
                             'version':'2.0',
                          },
                          nsmap = {
                              "atom" : "http://www.w3.org/2005/Atom",
                              "itunes" : "http://www.itunes.com/dtds/podcast-1.0.dtd"
-                             
                          }
                     )
     channel = ET.SubElement(rss, 'channel')
@@ -73,7 +72,7 @@ def build_xml(meta, casts, name):
     podcast_image_title = ET.SubElement(podcast_image, 'title')
     podcast_copyright = ET.SubElement(channel, 'copyright')
     podcast_generator = ET.SubElement(channel, 'generator')
-    
+
     #Populate elements with relevant data
     podcast_title.text = meta[2]
     podcast_description.text = meta[3]
@@ -85,19 +84,19 @@ def build_xml(meta, casts, name):
     podcast_image_title.text = meta[2]
     podcast_copyright.text = "Licensed under the Open Audio License."
     podcast_generator.text = "Binbogami"
-    
+
     #iTunes tags
     podcast_itunes_author = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}author')
     podcast_itunes_subtitle = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}subtitle')
     podcast_itunes_category = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}category')
     podcast_itunes_image = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}image')
-        
+
     #iTunes population
     podcast_itunes_author.text = name[0]
     podcast_itunes_subtitle.text = meta[3]
     podcast_itunes_category.text = meta[6]
     podcast_itunes_image.text = request.url_root + "image/" + cast_img
-    
+
     #now for the items for each podcast. Thankfully fucking iterable.
     for cast in casts:
         #Some variable-setting
@@ -122,13 +121,13 @@ def build_xml(meta, casts, name):
                             'isPermaLink':"true"
                         }
                     )
-        
+
         #Content
         cast_title.text = cast[2]
         cast_description.text = cast[3]
         cast_date.text = datetime.strptime(cast[5], "%Y-%m-%d %H:%M:%S").strftime("%a, %d %b %Y %H:%M:%S %z") + "+0000"
         cast_guid.text = encoded_url
-    
+
     #XML miscellanea
     doctype = '<?xml version="1.0" encoding="utf-8" ?>\n'
     body = ET.tostring(rss, encoding="UTF-8", method="xml", pretty_print="True").decode("utf-8")
