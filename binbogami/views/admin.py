@@ -9,16 +9,17 @@ from mutagenx.oggvorbis import OggVorbis
 from mutagenx.oggopus import OggOpus
 from mutagenx.oggspeex import OggSpeex
 from PIL import Image
+from binbogami.views.register import check_email
 
 admin = Blueprint("admin", __name__, template_folder="templates")
 
-#itunes_categories = ["Arts", "Design", "Fashion &amp; Beauty", "Food", 
+#itunes_categories = ["Arts", "Design", "Fashion &amp; Beauty", "Food",
 #                     "Literature", "Performing Arts", "Visual Arts",
 #                     "Business", "Business News", "Careers", "Investing",
 #                     "Management &amp; Marketing", "Shopping", "Comedy",
 #                     "Education", "Education Technology", "Higher Education",
 #                     "K-12", "Language Courses", "Training", "Games &amp; Hobbies",
-#                     "Automotive", "Aviation", "Hobbies", "Other Games", 
+#                     "Automotive", "Aviation", "Hobbies", "Other Games",
 #                     "Video Games", "Government &amp; Organizations", "Local",
 #                     "National", "Non-Profit", "Regional", "Health",
 #                     "Alternative Health", "Fitness &amp; Nutrition", "Self-Help",
@@ -52,12 +53,12 @@ def show_casts():
                 imgurlsplit = items[3].rsplit("/")
                 imgurl = imgurlsplit[len(imgurlsplit)-1]
                 cast_list.append((items[0], items[1], items[2], imgurl))
-        return render_template("podcast_admin.html", list=cast_list, 
+        return render_template("podcast_admin.html", list=cast_list,
                                 nocast="No casts.", friendly_name=session['name'])
     else:
         #TODO: implement this in a prettier manner.
         abort(401)
-        
+
 @admin.route("/admin/<castname>")
 def show_eps(castname):
     if 'username' in session:
@@ -74,7 +75,7 @@ def show_eps(castname):
                                         epname=ep[0]) + "." + ep[3]
                     list_template.append((ep[0], ep[1], cast_url))
             return render_template(
-                "ep_admin.html", podcastid=podcastid, list=list_template, 
+                "ep_admin.html", podcastid=podcastid, list=list_template,
                 noep="No episodes.", castname=castname
             )
         else:
@@ -84,7 +85,7 @@ def show_eps(castname):
 
 @admin.route("/admin/new/cast", methods=['POST', 'GET'])
 def new_cast():
-    if 'username' in session:    
+    if 'username' in session:
         if request.method == "GET":
             return render_template("podcasts_new.html", itunes_categories=itunes_categories)
         elif request.method == "POST":
@@ -116,29 +117,33 @@ def new_cast():
     else:
         #TODO: implement this in a prettier manner.
         abort(401)
-  
+
 @admin.route("/admin/edit/<castname>", methods=['GET', 'POST'])
 def edit_cast(castname):
     if 'username' in session:
         podcastid = get_id("id, name, image", castname, session['uid'])
-        cast_details = get_id("id, owner, name, description, url, image, categories", castname, session['uid'])
-        cast_img_list = cast_details[5].rsplit("/")
-        cast_img = cast_img_list[len(cast_img_list)-1]
-        cast_img_url = request.url_root + "image/" + cast_img
         if request.method == "GET":
             if podcastid != None:
+                cast_details = get_id("id, owner, name, description, url, image, categories", castname, session['uid'])
+                cast_img_list = cast_details[5].rsplit("/")
+                cast_img = cast_img_list[len(cast_img_list)-1]
+                cast_img_url = request.url_root + "image/" + cast_img
                 return render_template(
-                    "podcasts_edit.html", cast_details=cast_details, 
+                    "podcasts_edit.html", cast_details=cast_details,
                     cast_img_url=cast_img_url, itunes_categories=itunes_categories
                     )
             else:
                 abort(401)
         elif request.method == "POST":
             if podcastid != None:
+                cast_details = get_id("id, owner, name, description, url, image, categories", castname, session['uid'])
+                cast_img_list = cast_details[5].rsplit("/")
+                cast_img = cast_img_list[len(cast_img_list)-1]
+                cast_img_url = request.url_root + "image/" + cast_img
                 if validate_url(request.form['url']) == 1:
                     return render_template("podcasts_edit.html", error="You did not supply a valid URL.",
                                             itunes_categories=itunes_categories,
-                                            cast_details=cast_details, 
+                                            cast_details=cast_details,
                                             cast_img_url=cast_img_url)
                 if request.form['castname'] != podcastid[1]:
                     episodes = g.sqlite_db.execute(
@@ -182,8 +187,8 @@ def edit_cast(castname):
         else:
             return "Unsupported method."
     else:
-        abort(401)  
-        
+        abort(401)
+
 @admin.route("/admin/delete/<castname>")
 def delete_cast(castname):
     if 'username' in session:
@@ -217,7 +222,7 @@ def delete_cast(castname):
             )
             g.sqlite_db.execute(
                 "delete from podcasts_casts where podcast=(?)",
-                [podcastid[0]]    
+                [podcastid[0]]
             )
             g.sqlite_db.commit()
             return redirect(url_for('admin.show_casts'))
@@ -226,7 +231,7 @@ def delete_cast(castname):
     else:
         #TODO: implement this in a prettier manner
         abort(401)
-        
+
 @admin.route("/admin/<castname>/new", methods=['POST', 'GET'])
 def new_ep(castname):
     if 'username' in session:
@@ -260,17 +265,17 @@ def new_ep(castname):
                 return "Not your podcast."
     else:
         abort(401)
-        
+
 def allowed_file(filename):
     return '.' in filename and \
         filename.rsplit('.', 1)[1] in ["mp3", "ogg", "opus", "spx"]
 
 def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
     file_ext = ep_file.filename.rsplit('.', 1)[1]
-    new_filename = podcast[1] + " - " + ep_name + "." + file_ext                
-    filename = secure_filename(new_filename) 
+    new_filename = podcast[1] + " - " + ep_name + "." + file_ext
+    filename = secure_filename(new_filename)
     filepath = os.path.join(
-                current_app.config["UPLOAD_FOLDER"], 
+                current_app.config["UPLOAD_FOLDER"],
                 filename
                 )
     ep_file.save(filepath)
@@ -284,12 +289,12 @@ def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
         file_length = OggOpus(filepath).info.length
     else:
         return "This shouldn't happen"
-    
+
     if neworedit == "new":
         g.sqlite_db.execute(
             "insert into podcasts_casts (podcast, title, description, castfile, date, length, filetype) values (?,?,?,?, datetime('now'),?,?)",
             [
-                podcast[0], ep_name, 
+                podcast[0], ep_name,
                 ep_description, filepath,
                 file_length, file_ext
             ]
@@ -300,13 +305,13 @@ def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
             "update podcasts_casts set castfile=(?), length=(?), filetype=(?) where title=(?)",
             [filepath, file_length, file_ext, ep_name])
         g.sqlite_db.commit()
-        
+
 def image_upload(img, meta_array, neworedit):
     PIL_img = Image.open(img)
     if img.filename.rsplit(".", 1)[1] in ["jpg", "jpeg", "gif", "png"]:
         if PIL_img.size[0] == 1400 and PIL_img.size[1] == 1400:
             filename = request.form['castname'] + "." + \
-                img.filename.rsplit(".", 1)[1] 
+                img.filename.rsplit(".", 1)[1]
             safe_filename = secure_filename(filename)
             imgpath = os.path.join(
                     current_app.config["UPLOAD_FOLDER"],
@@ -332,9 +337,9 @@ def image_upload(img, meta_array, neworedit):
                 g.sqlite_db.commit()
             elif neworedit == "new":
                 g.sqlite_db.execute(
-                    "insert into podcasts_header (owner, name, description, url, image, categories) values (?,?,?,?,?,?)", 
+                    "insert into podcasts_header (owner, name, description, url, image, categories) values (?,?,?,?,?,?)",
                     [session['uid'],request.form['castname'],
-                    Markup(request.form['description']).striptags(), request.form['url'], 
+                    Markup(request.form['description']).striptags(), request.form['url'],
                     imgpath, request.form['category']]
                 )
                 g.sqlite_db.commit()
@@ -345,7 +350,7 @@ def image_upload(img, meta_array, neworedit):
             return 1
     else:
         return 2
-    
+
 @admin.route("/admin/edit/<castname>/<epname>", methods=["POST", "GET"])
 def edit_ep(castname,epname):
     if 'username' in session:
@@ -396,7 +401,7 @@ def edit_ep(castname,epname):
                     return "Already have a podcast by that name."
     else:
         abort(401)
-        
+
 @admin.route("/admin/delete/<castname>/<epname>")
 def delete_ep(castname, epname):
     if 'username' in session:
@@ -416,7 +421,7 @@ def delete_ep(castname, epname):
             #Do the associated database operations
             g.sqlite_db.execute(
                 "delete from podcasts_casts where podcast=(?) and title=(?)",
-                [podcastid[0], epname]    
+                [podcastid[0], epname]
             )
             g.sqlite_db.commit()
             return redirect(url_for('admin.show_casts'))
@@ -425,14 +430,14 @@ def delete_ep(castname, epname):
     else:
         #TODO: implement this in a prettier manner
         abort(401)
-        
+
 def get_id(query, castname, owner):
     getid = g.sqlite_db.execute(
-        "select " + query +" from podcasts_header where name=(?) and owner=(?)", 
+        "select " + query +" from podcasts_header where name=(?) and owner=(?)",
         [castname, owner]
     )
     return getid.fetchone()
-    
+
 def validate_url(url):
     regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
     is_it_a_url = match(regex, url)
@@ -440,31 +445,43 @@ def validate_url(url):
         return 1
     else:
         return 0
-    
+
 @admin.route("/admin/user", methods=["GET", "POST"])
 def user_admin():
+    #FIXME: As it is, we could register with one email address then change it
+    #       to an existing registration, don't think I care enough to fix.
     if 'username' in session:
+        user = g.sqlite_db.execute(
+            "select username, name, email from users where id=(?)",
+            [session['uid']]
+        ).fetchone()
         if request.method == "GET":
-            user = g.sqlite_db.execute(
-                "select username, name from users where id=(?)",
-                [session['uid']]
-            ).fetchone()
             return render_template("user_admin.html", user=user)
         else:
-            if len(request.form['password']) == 0:
-                g.sqlite_db.execute(
-                    "update users set username=(?), name=(?) where id=(?)",
-                    [request.form['username'], request.form['name'],
-                    session['uid']]
-                )
+            error = None
+            if check_email(request.form['email']):
+                if len(request.form['password']) == 0:
+                    g.sqlite_db.execute(
+                        "update users set username=(?), name=(?), email=(?) where id=(?)",
+                        [request.form['username'], request.form['name'],
+                        request.form['email'], session['uid']]
+                    )
+                else:
+                    password = hash_password(request.form['password'])
+                    g.sqlite_db.execute(
+                        "update users set username=(?), name=(?), pwhash=(?), email=(?) where id=(?)",
+                        [request.form['username'], request.form['name'], password,
+                        request.form['email'], session['uid']]
+                    )
+                g.sqlite_db.commit()
             else:
-                password = hash_password(request.form['password'])
-                g.sqlite_db.execute(
-                    "update users set username=(?), name=(?), pwhash=(?) where id=(?)",
-                    [request.form['username'], request.form['name'], password,
-                    session['uid']]
-                )
-            g.sqlite_db.commit()
-            return redirect(url_for('frontpage.index'))
+                error = "Not a valid email address."
+            #Call the database again to update the array that is passed to the
+            #template
+            user = g.sqlite_db.execute(
+                "select username, name, email from users where id=(?)",
+                [session['uid']]
+            ).fetchone()
+            return render_template("user_admin.html", user=user, error=error)
     else:
         abort(401)

@@ -6,16 +6,18 @@
 <div class="container">
         {% if error %}<p style="color:red">Error: {{error}}</p> {% endif %}
         {% if success %}<p style="color:green">Success: {{success}}</p> {% endif %}
-        <form action="{{ url_for('admin.user_admin') }}" method="POST">
+        <div id="form"><form action="{{ url_for('admin.user_admin') }}" method="POST">
             <dl>
-                <dt>Username: 
+                <dt>Username:
                 <dd><input type="text" size=30 name="username" value="{{ user[0] }}"/>
-                <dt>Password: 
+                <dt>Password:
                 <dd><input type="password" size=30 name="password" />
                 <dt>Friendly name:
                 <dd><input type="text" size=30 name="name" value="{{ user[1] }}"/>
+                <dt>Email address:
+                <dd><input type="text" size=30 name="email" value="{{ user[2] }}" />
                 <dd><input type="submit" value="Amend your details" />
             </dl>
-        </form>
+        </form></div>
 </div>
 {% endblock %}

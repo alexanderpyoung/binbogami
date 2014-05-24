@@ -8,6 +8,7 @@ create table users (
     username text not null,
     name text not null,
     pwhash text not null,
+    email text not null,
     storage real,
     bandwidth real
 );
@@ -21,7 +22,7 @@ create table podcasts_header (
     image text not null,
 	categories text not null,
     foreign key(owner) references users(id)
-); 
+);
 
 create table podcasts_casts (
     id integer primary key autoincrement,
