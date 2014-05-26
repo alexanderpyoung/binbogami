@@ -12,7 +12,7 @@ serve = Blueprint("serve", __name__, template_folder="templates")
 def serve_file(castname, epname):
     safe_filename = secure_filename(castname + " - " + epname)
     return send_from_directory(current_app.config['UPLOAD_FOLDER'],
-                                                    safe_filename.replace(" ", "_"))
+                                safe_filename.replace(" ", "_"))
 
 @serve.route("/image/<img_name>")
 def serve_image(img_name):
@@ -131,4 +131,13 @@ def build_xml(meta, casts, name):
     #XML miscellanea
     doctype = '<?xml version="1.0" encoding="utf-8" ?>\n'
     body = ET.tostring(rss, encoding="UTF-8", method="xml", pretty_print="True").decode("utf-8")
+    stats_update_xml(meta[0])
     return Markup(doctype + body)
+
+def stats_update_xml(cast):
+    g.sqlite_db.execute("insert into stats_xml (podcast, date) values (?, datetime('now'))",
+                        [cast])
+    g.sqlite_db.commit()
+
+def stats_update_episode(episode):
+    pass

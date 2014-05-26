@@ -35,8 +35,8 @@ admin = Blueprint("admin", __name__, template_folder="templates")
 
 itunes_categories = [
     "Arts", "Business", "Comedy", "Education", "Games & Hobbies",
-    "Government & Organizations", "Health", "Kids & Family",
-    "Music", "News & Politics", "Religion & Spirituality", "Science & Medicine",
+    "Government & Organizations", "Health", "Kids & Family", "Music",
+    "News & Politics", "Religion & Spirituality", "Science & Medicine",
     "Society & Culture", "Sports & Recreation", "Technology", "TV & Film"
 ]
 

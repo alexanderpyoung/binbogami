@@ -11,7 +11,6 @@ bbgapp.config.from_object(__name__)
 
 bbgapp.config.update(dict(
     DATABASE="bbg.db",
-    DEBUG=True,
     SECRET_KEY="DEVELOPMENTKEY",
     #CHANGE THIS IN PRODUCTION
     UPLOAD_FOLDER="/Users/alexander/git/binbogami/files/"
@@ -49,7 +48,7 @@ def init_db():
             except sqlite3.OperationalError as e:
                 print("{!r}".format(e))
         db.commit()
-        
+
 @bbgapp.errorhandler(401)
 def error_401(e):
     return render_template('401.html'), 401

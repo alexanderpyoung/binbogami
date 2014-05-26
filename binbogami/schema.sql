@@ -35,3 +35,10 @@ create table podcasts_casts (
 	filetype text not null,
     foreign key(podcast) references podcasts_header(id)
 );
+
+create table stats_xml (
+    id integer primary key autoincrement,
+    podcast integer not null,
+    date text not null,
+    foreign key(podcast) references podcasts_header(id)
+);
