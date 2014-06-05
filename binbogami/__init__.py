@@ -7,15 +7,8 @@ from binbogami.views.admin import *
 from binbogami.views.serve import *
 
 bbgapp = Flask(__name__)
-bbgapp.config.from_object(__name__)
-
-bbgapp.config.update(dict(
-    DATABASE="bbg.db",
-    SECRET_KEY="DEVELOPMENTKEY",
-    #CHANGE THIS IN PRODUCTION
-    UPLOAD_FOLDER="/Users/alexander/git/binbogami/files/"
-))
-
+#bbgapp.config.from_object("bbgapp.default_settings")
+bbgapp.config.from_pyfile("bbg.cfg")
 
 def connect_db():
     db = sqlite3.connect(bbgapp.config['DATABASE'])

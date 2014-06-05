@@ -63,6 +63,7 @@ docs/_build/
 # Data stuff
 
 files/
+*.cfg
 
 # Eclipse
 *.pydevproject

@@ -2,6 +2,7 @@ drop table if exists users;
 drop table if exists podcasts_header;
 drop table if exists podcasts_casts;
 drop table if exists podcasts_categories;
+drop table if exists stats_xml;
 
 create table users (
     id integer primary key autoincrement,

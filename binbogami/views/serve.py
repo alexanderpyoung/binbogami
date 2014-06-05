@@ -10,9 +10,11 @@ serve = Blueprint("serve", __name__, template_folder="templates")
 
 @serve.route("/<castname>/<epname>")
 def serve_file(castname, epname):
-    safe_filename = secure_filename(castname + " - " + epname)
+    safe_podcast_name = secure_filename(castname)
+    safe_episode_name = secure_filename(epname)
+    safe_name = safe_podcast_name + "/" + safe_episode_name
     return send_from_directory(current_app.config['UPLOAD_FOLDER'],
-                                safe_filename.replace(" ", "_"))
+                                safe_name)
 
 @serve.route("/image/<img_name>")
 def serve_image(img_name):

@@ -102,7 +102,6 @@ def new_cast():
                 img = request.files['img']
                 if len(img.filename) != 0:
                     img_upload = image_upload(img, None, "new")
-                    print(img_upload)
                     if img_upload == 0:
                         return redirect(url_for('admin.show_casts'))
                     elif img_upload == 1:
@@ -272,12 +271,16 @@ def allowed_file(filename):
 
 def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
     file_ext = ep_file.filename.rsplit('.', 1)[1]
-    new_filename = podcast[1] + " - " + ep_name + "." + file_ext
-    filename = secure_filename(new_filename)
+    secure_podcast_name = secure_filename(podcast[1])
+    secure_ep_name = secure_filename(ep_name)
+    secure_file_ext = secure_filename(file_ext)
+    new_filename = secure_podcast_name + "/" + secure_ep_name + "." + secure_file_ext
     filepath = os.path.join(
                 current_app.config["UPLOAD_FOLDER"],
-                filename
+                new_filename
                 )
+    if not os.path.isdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name)):
+        os.mkdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name))
     ep_file.save(filepath)
     if file_ext == "mp3":
         file_length = MP3(filepath).info.length
@@ -374,10 +377,13 @@ def edit_ep(castname,epname):
                 if cast_name_check == None or (cast_name_check != None \
                 and request.form['epname'] == cast[2]):
                     if len(ep.filename) == 0:
-                        filename = secure_filename(castname + " - " + request.form['epname'] + "." + cast[5])
+                        secure_cast_name = secure_filename(castname)
+                        secure_episode_name = secure_filename(request.form['epname'])
+                        secure_file_ext = secure_filename(cast[5])
                         filepath = os.path.join(
                             current_app.config["UPLOAD_FOLDER"],
-                            filename
+                            secure_cast_name, secure_epsiode_name,
+                            secure_file_ext
                         )
                         os.rename(cast[4], filepath)
                         g.sqlite_db.execute(
