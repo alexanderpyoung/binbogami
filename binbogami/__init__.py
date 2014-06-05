@@ -7,7 +7,6 @@ from binbogami.views.admin import *
 from binbogami.views.serve import *
 
 bbgapp = Flask(__name__)
-#bbgapp.config.from_object("bbgapp.default_settings")
 bbgapp.config.from_pyfile("bbg.cfg")
 
 def connect_db():
