@@ -146,24 +146,31 @@ def edit_cast(castname):
                                             cast_img_url=cast_img_url)
                 if request.form['castname'] != podcastid[1]:
                     episodes = g.sqlite_db.execute(
-                        "select id, castfile from podcasts_casts where podcast=(?)",
+                        "select id, title, castfile, filetype from podcasts_casts where podcast=(?)",
                         [podcastid[0]]
                     ).fetchall()
                     if len(episodes) != 0:
+                        new_folder = False
                         for episode in episodes:
-                            filename_rhs_list = episode[1].rsplit("-_")
-                            filename_rhs = filename_rhs_list[len(filename_rhs_list)-1]
-                            filename = secure_filename(request.form['castname'] + " - " + filename_rhs)
+                            secure_podcast_name = secure_filename(request.form['castname'])
+                            secure_ep_name = secure_filename(episode[1])
+                            secure_file_ext = secure_filename(episode[3])
+                            new_filename = secure_podcast_name + "/" + secure_ep_name + "." + secure_file_ext
                             filepath = os.path.join(
                                 current_app.config['UPLOAD_FOLDER'],
-                                filename
+                                new_filename
                             )
-                            os.rename(episode[1], filepath)
+                            if not os.path.isdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name)):
+                                os.mkdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name))
+                                new_folder = True
+                            os.rename(episode[2], filepath)
                             g.sqlite_db.execute(
                                 "update podcasts_casts set castfile=(?) where id=(?)",
                                 [filepath, episode[0]]
                             )
                             g.sqlite_db.commit()
+                        if new_folder == True:
+                            os.rmdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_filename(cast_details[2])))
                 img = request.files['img']
                 if len(img.filename) != 0:
                     img_upload = image_upload(img, podcastid, "edit")
