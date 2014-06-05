@@ -18,9 +18,7 @@ def login():
             return render_template("login.html", error=error)
         else:
             if bcrypt.verify(request.form["password"], row[3]):
-                session['uid'] = str(row[0])
-                session['username'] = row[1]
-                session['name'] = row[2]
+                create_session(row)
                 return redirect(url_for('admin.show_casts'))
             else:
                 error = "Incorrect username and password, please try again."
@@ -30,4 +28,8 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('frontpage.index'))
-    
+
+def create_session(session_information):
+    session['uid'] = str(session_information[0])
+    session['username'] = session_information[1]
+    session['name'] = session_information[2]

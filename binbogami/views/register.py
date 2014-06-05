@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, g, request
+from flask import Blueprint, render_template, g, request, redirect, url_for
+from binbogami.views.log import create_session
 from passlib.hash import bcrypt
 from re import match
 
@@ -28,9 +29,12 @@ def reg():
                 request.form['email']]
             )
             g.sqlite_db.commit()
-            success = "You have successfully registered!"
 
-    return render_template("register.html", error=error, success=success)
+            login_details = g.sqlite_db.execute("select * from users where username=(?)", [request.form["username"]]).fetchone()
+            create_session(login_details)
+            return redirect(url_for('admin.show_casts'))
+
+    return render_template("register.html", error=error)
 
 def hash_password(password):
     pw2bytes = password.encode("utf-8")
