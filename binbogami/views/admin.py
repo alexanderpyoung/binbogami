@@ -250,27 +250,17 @@ def new_ep(castname):
                 return "This cast does not exist, or you do not own it."
         elif request.method == "POST":
             if podcastid != None:
-                ep = request.files['castfile']
+                ep = request.form["file-upload"]
                 query = g.sqlite_db.execute(
                     "select title from podcasts_casts where title=(?) and podcast=(?)",
                     [request.form['epname'], podcastid[0]]
                 )
                 result = query.fetchone()
-                if ep and allowed_file(ep.filename) and result == None \
-                and len(ep.filename) != 0:
+                if ep and result == None and len(ep) != 0:
                     cast_upload(
                         ep, podcastid, request.form["epname"], request.form['description'], "new"
                     )
                     return redirect(url_for('admin.show_eps', castname=castname))
-                elif len(ep.filename) == 0:
-                    error = "No cast uploaded."
-                    return render_template("ep_new.html", podcastid=podcastid, error=error)
-                elif not allowed_file(ep.filename):
-                    error = "File type not allowed, must be MP3, SPX, Opus or OGG."
-                    return render_template("ep_new.html", podcastid=podcastid, error=error)
-                elif result != None:
-                    error = "An episode with this name already exists for this podcast."
-                    return render_template("ep_new.html", podcastid=podcastid, error=error)
             else:
                 return "Not your podcast."
     else:
@@ -281,7 +271,7 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1] in ["mp3", "ogg", "opus", "spx"]
 
 def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
-    file_ext = ep_file.filename.rsplit('.', 1)[1]
+    file_ext = ep_file.rsplit('.', 1)[1]
     secure_podcast_name = secure_filename(podcast[1])
     secure_ep_name = secure_filename(ep_name)
     secure_file_ext = secure_filename(file_ext)

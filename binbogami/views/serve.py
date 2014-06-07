@@ -1,10 +1,11 @@
 from flask import Blueprint, g, session, send_from_directory, current_app
-from flask import Markup, request
+from flask import Markup, request, Response
 from werkzeug.utils import secure_filename
 from binbogami.views.admin import get_id
 from lxml import etree as ET
 from datetime import datetime
 from urllib.parse import quote
+import os, mimetypes, re
 
 serve = Blueprint("serve", __name__, template_folder="templates")
 
@@ -13,8 +14,54 @@ def serve_file(castname, epname):
     safe_podcast_name = secure_filename(castname)
     safe_episode_name = secure_filename(epname)
     safe_name = safe_podcast_name + "/" + safe_episode_name
-    return send_from_directory(current_app.config['UPLOAD_FOLDER'],
-                                safe_name)
+    filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], safe_name)
+    return send_file_partial(filepath, safe_name)
+
+@serve.after_request
+def after_request(response):
+    response.headers.add('Accept-Ranges', 'bytes')
+    return response
+
+
+def send_file_partial(path, safe_name):
+    """
+        Simple wrapper around send_file which handles HTTP 206 Partial Content
+        (byte ranges)
+        TODO: handle all send_file args, mirror send_file's error handling
+        (if it has any)
+    """
+    range_header = request.headers.get('Range', None)
+    if not range_header:
+        print("NOT A 206!")
+        return send_from_directory(current_app.config["UPLOAD_FOLDER"], safe_name)
+
+    print(path)
+    size = os.path.getsize(path)
+    byte1, byte2 = 0, None
+
+    m = re.search('(\d+)-(\d*)', range_header)
+    g = m.groups()
+
+    if g[0]: byte1 = int(g[0])
+    if g[1]: byte2 = int(g[1])
+
+    length = size - byte1
+    if byte2 is not None:
+        length = byte2 - byte1
+
+    data = None
+    with open(path, 'rb') as f:
+        f.seek(byte1)
+        data = f.read(length)
+
+    rv = Response(data,
+        206,
+        mimetype=mimetypes.guess_type(path)[0],
+        direct_passthrough=True)
+
+    rv.headers.add('Content-Range', 'bytes {0}-{1}/{2}'.format(byte1, byte1 + length - 1, size))
+    print("A 206!")
+    return rv
 
 @serve.route("/image/<img_name>")
 def serve_image(img_name):
