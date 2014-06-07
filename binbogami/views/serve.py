@@ -15,7 +15,7 @@ def serve_file(castname, epname):
     safe_episode_name = secure_filename(epname)
     safe_name = safe_podcast_name + "/" + safe_episode_name
     filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], safe_name)
-    return send_file_partial(filepath, safe_name)
+    return send_file_206(filepath, safe_name)
 
 @serve.after_request
 def after_request(response):
@@ -23,16 +23,10 @@ def after_request(response):
     return response
 
 
-def send_file_partial(path, safe_name):
-    """
-        Simple wrapper around send_file which handles HTTP 206 Partial Content
-        (byte ranges)
-        TODO: handle all send_file args, mirror send_file's error handling
-        (if it has any)
-    """
+def send_file_206(path, safe_name):
+
     range_header = request.headers.get('Range', None)
     if not range_header:
-        print("NOT A 206!")
         return send_from_directory(current_app.config["UPLOAD_FOLDER"], safe_name)
 
     print(path)
@@ -58,9 +52,7 @@ def send_file_partial(path, safe_name):
         206,
         mimetype=mimetypes.guess_type(path)[0],
         direct_passthrough=True)
-
-    rv.headers.add('Content-Range', 'bytes {0}-{1}/{2}'.format(byte1, byte1 + length - 1, size))
-    print("A 206!")
+    rv.headers.add('Content-Range', 'bytes {0}-{1}/{2}'.format(byte1, byte1 + length, size))
     return rv
 
 @serve.route("/image/<img_name>")
