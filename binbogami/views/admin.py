@@ -1,4 +1,4 @@
-import os
+import os, shutil
 from re import match
 from flask import Blueprint, g, session, render_template, abort, request, redirect
 from flask import url_for, current_app, Markup
@@ -65,7 +65,7 @@ def show_eps(castname):
         podcastid = get_id("id, name", castname, session['uid'])
         if podcastid != None:
             eps = g.sqlite_db.execute(
-                "select title, description, castfile, filetype from podcasts_casts where podcast=(?)",
+                "select title, description, castfile, filetype from podcasts_casts where podcast=(?) order by date desc",
                 [podcastid[0]]
             ).fetchall()
             list_template = []
@@ -261,6 +261,8 @@ def new_ep(castname):
                         ep, podcastid, request.form["epname"], request.form['description'], "new"
                     )
                     return redirect(url_for('admin.show_eps', castname=castname))
+                else:
+                    return "Error."
             else:
                 return "Not your podcast."
     else:
@@ -282,7 +284,10 @@ def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
                 )
     if not os.path.isdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name)):
         os.mkdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name))
-    ep_file.save(filepath)
+    try:
+        shutil.move(os.path.join(current_app.config["UPLOAD_FOLDER"], "tmp", ep_file), filepath)
+    except:
+        return "Something bad happened."
     if file_ext == "mp3":
         file_length = MP3(filepath).info.length
     elif file_ext == "ogg":
@@ -370,20 +375,21 @@ def edit_ep(castname,epname):
                 return "No such episode."
         if request.method == "POST":
             if podcastid != None:
-                ep = request.files['castfile']
+                ep = request.form['file-upload']
                 cast_name_check = g.sqlite_db.execute(
                     "select id from podcasts_casts where title=(?)",
                     [request.form['epname']]
                 ).fetchone()
                 if cast_name_check == None or (cast_name_check != None \
                 and request.form['epname'] == cast[2]):
-                    if len(ep.filename) == 0:
+                    if len(ep) == 0:
                         secure_cast_name = secure_filename(castname)
                         secure_episode_name = secure_filename(request.form['epname'])
                         secure_file_ext = secure_filename(cast[5])
+
                         filepath = os.path.join(
                             current_app.config["UPLOAD_FOLDER"],
-                            secure_cast_name, secure_epsiode_name,
+                            secure_cast_name, secure_episode_name + "." +
                             secure_file_ext
                         )
                         os.rename(cast[4], filepath)
