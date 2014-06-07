@@ -105,11 +105,12 @@ def new_cast():
                     if img_upload == 0:
                         return redirect(url_for('admin.show_casts'))
                     elif img_upload == 1:
-                        return "Incorrect file size."
+                        error = "Incorrect image size."
                     else:
-                        return "Incorrect file type."
+                        error = "Your image must be a JPEG, GIF or PNG."
                 else:
-                    return "No image uploaded."
+                    error = "You did not select an image to upload."
+                return render_template("podcasts_new.html", error=error, itunes_categories=itunes_categories)
             else:
                 error = "You already have a podcast by that name."
                 return render_template("podcasts_new.html", error=error, itunes_categories=itunes_categories)
@@ -260,13 +261,16 @@ def new_ep(castname):
                     cast_upload(
                         ep, podcastid, request.form["epname"], request.form['description'], "new"
                     )
-                    return "Success."
+                    return redirect(url_for('admin.show_eps', castname=castname))
                 elif len(ep.filename) == 0:
-                    return "No cast uploaded."
+                    error = "No cast uploaded."
+                    return render_template("ep_new.html", podcastid=podcastid, error=error)
                 elif not allowed_file(ep.filename):
-                    return "File type not allowed."
+                    error = "File type not allowed, must be MP3, SPX, Opus or OGG."
+                    return render_template("ep_new.html", podcastid=podcastid, error=error)
                 elif result != None:
-                    return "Cast already exists."
+                    error = "An episode with this name already exists for this podcast."
+                    return render_template("ep_new.html", podcastid=podcastid, error=error)
             else:
                 return "Not your podcast."
     else:

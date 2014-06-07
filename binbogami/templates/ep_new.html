@@ -18,9 +18,9 @@
 		<div id="map"><a href="{{ url_for('admin.show_casts') }}">Cast Administration</a> &raquo; <a href="{{ url_for('admin.show_eps', castname=podcastid[1]) }}">{{ podcastid[1] }}</a> &raquo; Add new episode to "{{ podcastid[1] }}"</div>
         <div id="form"><form action="{{ url_for('admin.new_ep', castname=podcastid[1]) }}" method="POST" enctype="multipart/form-data">
             <dl>
-                <dt>Episode name: 
+                <dt>Episode name:
                 <dd><input type="text" size=30 name="epname" />
-                <dt>Description: 
+                <dt>Description:
                 <dd><textarea name="description">Enter your description here.</textarea>
 				<dt>File:
 				<dd><input type="file" size=30 name="castfile">
