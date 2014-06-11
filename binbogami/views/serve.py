@@ -24,7 +24,6 @@ def after_request(response):
 
 
 def send_file_206(path, safe_name):
-
     range_header = request.headers.get('Range', None)
     if not range_header:
         return send_from_directory(current_app.config["UPLOAD_FOLDER"], safe_name)
@@ -41,7 +40,7 @@ def send_file_206(path, safe_name):
 
     length = size - byte1
     if byte2 is not None:
-        length = byte2 - byte1
+        length = byte2 - byte1 + 1
 
     data = None
     with open(path, 'rb') as f:
@@ -52,7 +51,7 @@ def send_file_206(path, safe_name):
         206,
         mimetype=mimetypes.guess_type(path)[0],
         direct_passthrough=True)
-    rv.headers.add('Content-Range', 'bytes {0}-{1}/{2}'.format(byte1, byte1 + length, size))
+    rv.headers.add('Content-Range', 'bytes {0}-{1}/{2}'.format(byte1, byte1 + length - 1, size))
     return rv
 
 @serve.route("/image/<img_name>")
