@@ -43,3 +43,4 @@ create table stats_xml (
     date text not null,
     foreign key(podcast) references podcasts_header(id)
 );
+

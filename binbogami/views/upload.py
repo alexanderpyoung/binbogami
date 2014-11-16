@@ -13,5 +13,10 @@ def upload_file():
                 filename = secure_filename(file.filename)
                 filepath = os.path.join(current_app.config["UPLOAD_FOLDER"],
                                         "tmp", filename)
-                file.save(filepath)
-            return '{"OK": 0}'
+                try:
+                    file.save(filepath)
+                except:
+                    raise
+                return '{"jsonrpc" : "2.0", "result" : null, "id" : "id"}'
+            else:
+                return '{"jsonrpc" : "2.0", "error" : {"code": 500, "message": "Failed to move uploaded file."}, "id" : "id"}'

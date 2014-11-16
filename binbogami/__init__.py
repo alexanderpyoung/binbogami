@@ -21,15 +21,10 @@ def before_request():
 
 
 def get_db():
-    if not hasattr(g, "sqlite_db"):
-        g.sqlite_db = connect_db()
-    return g.sqlite_db
-
-
-@bbgapp.teardown_appcontext
-def close_db(error):
-    if hasattr(g, "sqlite_db"):
-        g.sqlite_db.close()
+    with bbgapp.app_context():
+        if not hasattr(g, "sqlite_db"):
+            g.sqlite_db = connect_db()
+        return g.sqlite_db
 
 
 def init_db():

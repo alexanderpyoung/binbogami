@@ -75,8 +75,7 @@ def show_eps(castname):
                                         epname=ep[0]) + "." + ep[3]
                     list_template.append((ep[0], ep[1], cast_url))
             return render_template(
-                "ep_admin.html", podcastid=podcastid, list=list_template,
-                noep="No episodes.", castname=castname
+                "ep_admin.html", podcastid=podcastid, list=list_template, noep="No episodes.", castname=castname
             )
         else:
             return "You don't own this podcast."
@@ -258,7 +257,7 @@ def new_ep(castname):
                 result = query.fetchone()
                 if ep and result == None and len(ep) != 0:
                     cast_upload(
-                        ep, podcastid, request.form["epname"], request.form['description'], "new"
+                        secure_filename(ep), podcastid, request.form["epname"], request.form['description'], "new"
                     )
                     return redirect(url_for('admin.show_eps', castname=castname))
                 else:
@@ -287,7 +286,7 @@ def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
     try:
         shutil.move(os.path.join(current_app.config["UPLOAD_FOLDER"], "tmp", ep_file), filepath)
     except:
-        return "Something bad happened."
+        raise
     if file_ext == "mp3":
         file_length = MP3(filepath).info.length
     elif file_ext == "ogg":
@@ -330,6 +329,7 @@ def image_upload(img, meta_array, neworedit):
             # does "something" to it - won't save from that function. Works
             # with PIL, though.
             try:
+                print(imgpath)
                 PIL_img.save(imgpath)
             except:
                 return 3
