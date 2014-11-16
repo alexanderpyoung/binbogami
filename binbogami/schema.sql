@@ -21,7 +21,8 @@ create table podcasts_header (
     description text not null,
     url text not null,
     image text not null,
-	categories text not null,
+    categories text not null,
+    explicit text not null,
     foreign key(owner) references users(id)
 );
 

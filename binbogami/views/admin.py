@@ -120,10 +120,10 @@ def new_cast():
 @admin.route("/admin/edit/<castname>", methods=['GET', 'POST'])
 def edit_cast(castname):
     if 'username' in session:
-        podcastid = get_id("id, name, image", castname, session['uid'])
+        podcastid = get_id("id, name, image, explicit", castname, session['uid'])
         if request.method == "GET":
             if podcastid != None:
-                cast_details = get_id("id, owner, name, description, url, image, categories", castname, session['uid'])
+                cast_details = get_id("id, owner, name, description, url, image, categories, explicit", castname, session['uid'])
                 cast_img_list = cast_details[5].rsplit("/")
                 cast_img = cast_img_list[len(cast_img_list)-1]
                 cast_img_url = request.url_root + "image/" + cast_img
@@ -135,7 +135,7 @@ def edit_cast(castname):
                 abort(401)
         elif request.method == "POST":
             if podcastid != None:
-                cast_details = get_id("id, owner, name, description, url, image, categories", castname, session['uid'])
+                cast_details = get_id("id, owner, name, description, url, image, categories, explicit", castname, session['uid'])
                 cast_img_list = cast_details[5].rsplit("/")
                 cast_img = cast_img_list[len(cast_img_list)-1]
                 cast_img_url = request.url_root + "image/" + cast_img
@@ -182,9 +182,9 @@ def edit_cast(castname):
                         return "Image incorrect format."
                 else:
                     g.sqlite_db.execute(
-                        "update podcasts_header set name=(?), description=(?), url=(?), categories=(?) where id=(?)",
+                        "update podcasts_header set name=(?), description=(?), url=(?), categories=(?), explicit=(?) where id=(?)",
                         [request.form['castname'], Markup(request.form['description']).striptags(),
-                        request.form['url'], request.form['category'], podcastid[0]]
+                        request.form['url'], request.form['category'], request.form['explicit'], podcastid[0]]
                     )
                     g.sqlite_db.commit()
                     return redirect(url_for('admin.show_casts'))
@@ -346,10 +346,10 @@ def image_upload(img, meta_array, neworedit):
                 g.sqlite_db.commit()
             elif neworedit == "new":
                 g.sqlite_db.execute(
-                    "insert into podcasts_header (owner, name, description, url, image, categories) values (?,?,?,?,?,?)",
+                    "insert into podcasts_header (owner, name, description, url, image, categories, explicit) values (?,?,?,?,?,?,?)",
                     [session['uid'],request.form['castname'],
                     Markup(request.form['description']).striptags(), request.form['url'],
-                    imgpath, request.form['category']]
+                    imgpath, request.form['category'], request.form['explicit']]
                 )
                 g.sqlite_db.commit()
             else:

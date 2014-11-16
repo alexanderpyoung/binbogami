@@ -32,6 +32,12 @@
 					<select name="category">
 					{% for category in itunes_categories %}{% if category == cast_details[6] %}<option value="{{ category }}" selected>{{ category }}</option>{% else %}<option value="{{ category }}">{{ category }}</option>{% endif %}
 					{% endfor %}</select>
+                <dt>Explicit?
+                <dd>
+                    <select name="explicit">
+                        <option value="clean">Clean</option>
+                        <option value="yes" {% if cast_details[7] == "yes" %} selected{% endif %}>Explicit content</option>
+                    </select>
                 <dd><input type="submit" value="Submit changes">
             </dl>
         </form>

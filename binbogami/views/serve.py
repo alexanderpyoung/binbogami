@@ -126,6 +126,7 @@ def build_xml(meta, casts, name):
     podcast_generator.text = "Binbogami"
 
     #iTunes tags
+    podcast_itunes_explicit = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}explicit')
     podcast_itunes_author = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}author')
     podcast_itunes_subtitle = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}subtitle')
     podcast_itunes_category = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}category')
@@ -136,6 +137,7 @@ def build_xml(meta, casts, name):
     podcast_itunes_subtitle.text = meta[3]
     podcast_itunes_category.text = meta[6]
     podcast_itunes_image.text = request.url_root + "image/" + cast_img
+    podcast_itunes_explicit.text = meta[7]
 
     #now for the items for each podcast. Thankfully fucking iterable.
     for cast in casts:

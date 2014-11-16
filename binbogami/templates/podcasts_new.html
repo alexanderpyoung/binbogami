@@ -33,6 +33,12 @@
 					<option type="checkbox"value="{{ category }}">{{ category }}</option>
 					{% endfor %}
 					</select>
+                <dt>Explicit?
+                <dd>
+                <select name="explicit">
+                    <option value="clean">Clean</option>
+                    <option value="yes">Explicit content</option>
+                </select>
                 <dd><input type="submit" value="Add podcast">
             </dl>
         </form></div>
