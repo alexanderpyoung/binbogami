@@ -177,9 +177,7 @@ def build_xml(meta, casts, name):
     return Markup(doctype + body)
 
 def stats_update_xml(cast):
-    g.sqlite_db.execute("insert into stats_xml (podcast, date) values (?, datetime('now'))",
-                        [cast])
-    g.sqlite_db.commit()
+    pass
 
 def stats_update_episode(episode):
     pass
