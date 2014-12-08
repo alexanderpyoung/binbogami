@@ -1,5 +1,4 @@
 from binbogami.tests.test_binbogami import TestBinbogami
-import flask
 import unittest
 
 class TestLog(unittest.TestCase):

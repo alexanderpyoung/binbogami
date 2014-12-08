@@ -1,7 +1,6 @@
-from flask import Blueprint, g, session, send_from_directory, current_app
+from flask import Blueprint, g, send_from_directory, current_app
 from flask import Markup, request, Response
 from werkzeug.utils import secure_filename
-from binbogami.views.admin import get_id
 from lxml import etree as ET
 from datetime import datetime
 from urllib.parse import quote
@@ -84,7 +83,7 @@ def build_xml(meta, casts, name):
     encoded_feed_url = request.url_root + quote(meta[2]) + "/feed"
     cast_img_list = meta[5].rsplit("/")
     cast_img = cast_img_list[len(cast_img_list)-1]
-    #TODO: Categories; Editorship, TTL; SkipDays/Hours; iTunes?
+    #TODO: Editorship, TTL; SkipDays/Hours
     rss = ET.Element('rss',
                         {
                             'version':'2.0',

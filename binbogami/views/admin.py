@@ -98,6 +98,9 @@ def new_cast():
                 if validate_url(request.form['url']) == 1:
                     return render_template("podcasts_new.html", error="You did not supply a valid URL.",
                                             itunes_categories=itunes_categories)
+                if request.form['castname'] == "":
+                    return render_template("podcasts_new.html", error="You did not supply a valid cast name.",
+                                           itunes_categories=itunes_categories)
                 img = request.files['img']
                 if len(img.filename) != 0:
                     img_upload = image_upload(img, None, "new")
@@ -139,6 +142,10 @@ def edit_cast(castname):
                 cast_img_list = cast_details[5].rsplit("/")
                 cast_img = cast_img_list[len(cast_img_list)-1]
                 cast_img_url = request.url_root + "image/" + cast_img
+                if request.form['castname'] == "":
+                    return render_template("podcasts_edit.html", error="You did not supply a valid cast name.",
+                                    itunes_categories=itunes_categories, cast_details=cast_details,
+                                    cast_img_url=cast_img_url)
                 if validate_url(request.form['url']) == 1:
                     return render_template("podcasts_edit.html", error="You did not supply a valid URL.",
                                             itunes_categories=itunes_categories,
@@ -249,6 +256,8 @@ def new_ep(castname):
                 return "This cast does not exist, or you do not own it."
         elif request.method == "POST":
             if podcastid != None:
+                if request.form['epname'] == "":
+                    return render_template("ep_new.html", podcastid=podcastid, error="You did not specify a valid podcast name.")
                 ep = request.form["file-upload"]
                 query = g.sqlite_db.execute(
                     "select title from podcasts_casts where title=(?) and podcast=(?)",
@@ -329,7 +338,6 @@ def image_upload(img, meta_array, neworedit):
             # does "something" to it - won't save from that function. Works
             # with PIL, though.
             try:
-                print(imgpath)
                 PIL_img.save(imgpath)
             except:
                 return 3
@@ -375,6 +383,9 @@ def edit_ep(castname,epname):
                 return "No such episode."
         if request.method == "POST":
             if podcastid != None:
+                if request.form['epname'] == "":
+                    return render_template("ep_edit.html", podcastid=podcastid,
+                                            error="You did not specify a valid podcast name.", cast=cast)
                 ep = request.form['file-upload']
                 cast_name_check = g.sqlite_db.execute(
                     "select id from podcasts_casts where title=(?)",
