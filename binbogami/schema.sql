@@ -43,7 +43,7 @@ create table stats_xml (
     podcast integer not null,
     date text not null,
     ip text not null, 
-    referrer text not null,
+    referrer text,
     foreign key(podcast) references podcasts_header(id)
 );
 
