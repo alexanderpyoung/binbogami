@@ -80,6 +80,7 @@ def serve_xml(castname):
             "select name from users where id=(?)",
             [cast_meta[1]]
         ).fetchone()
+        stats_update_xml(cast_meta[0])
         return build_xml(cast_meta, episodes, name)
     else:
         return "No such cast."
@@ -178,7 +179,6 @@ def build_xml(meta, casts, name):
     #XML miscellanea
     doctype = '<?xml version="1.0" encoding="utf-8" ?>\n'
     body = ET.tostring(rss, encoding="UTF-8", method="xml", pretty_print="True").decode("utf-8")
-    stats_update_xml(meta[0])
     return Markup(doctype + body)
 
 def stats_update_xml(cast):
