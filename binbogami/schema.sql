@@ -53,7 +53,7 @@ create table stats_episodes (
     podcast_episode integer not null,
     date text not null,
     ip text not null,
-    referrer text not null,
+    referrer text,
     foreign key(podcast) references podcasts_header(id)
     foreign key(podcast_episode) references podcasts_casts(id)
 );
