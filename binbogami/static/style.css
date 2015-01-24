@@ -94,6 +94,42 @@ body {
 	background: rgba(0,0,0,0.1);
 }
 
+.stats-table {
+  width: 100%;
+  border: none;
+  border-collapse: collapse;
+  background: white;
+  margin-bottom: 20px;
+}
+
+.stats-header {
+  font-weight: bold;
+  color: rgba(0,0,0,0.9);
+  padding: 1em;
+}
+
+.stats-header td {
+  padding: 0.7em 1em 0.7em 1em;
+  box-shadow: inset 0 -1px rgba(0, 0, 0, 0.1),
+    inset 0 1px rgba(0, 0, 0, 0.1); 
+}
+
+.stats-row {
+  vertical-align: middle;
+  -webkit-transition: background 0.5s, box-shadow 0.5s;
+  -moz-transition: background 0.5s, box-shadow 0.5s;
+  transition: background 0.5s, box-shadow 0.5s;
+}
+
+.stats-row td {
+  color: #000000;
+  padding: 0.5em 0.5em 0.5em 0.5em;
+}
+
+.stats-row:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
 .podcast-name {
 	font-weight: bold;
 }

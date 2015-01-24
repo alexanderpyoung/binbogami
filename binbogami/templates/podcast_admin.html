@@ -7,9 +7,9 @@
 <h1>List of podcasts for {{ friendly_name }}: </h1>
 {% if list %}
 <table class="podcast-table">
-	<tr class="podcast-header"><td>Podcast name</td><td>Podcast description</td><td>Podcast URL</td><td>Podcast image</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+  <tr class="podcast-header"><td>Podcast name</td><td>Podcast description</td><td>Podcast URL</td><td>Podcast image</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
 {% for item in list %}
-	<tr class="podcast-row"><td class="podcast-name"><a href="{{url_for('admin.show_eps', castname=item[0]) }}">{{ item[0] }}</td><td>{% autoescape false %}{{ item[1] }}{% endautoescape %}</td><td>{{ item[2] }}</td><td class="podcast-image"><img src="{{ url_for('serve.serve_image', img_name=item[3]) }}"></td><td><a href="{{ url_for('serve.serve_xml', castname=item[0]) }}">Podcast feed</a></td><td><a href="{{ url_for('admin.delete_cast', castname=item[0]) }}">Delete cast</a></td><td><a href="{{ url_for('admin.edit_cast', castname=item[0]) }}">Edit cast</a></td><td><a href="{{ url_for('admin.new_ep', castname=item[0]) }}">Add episode</a></td></tr>
+<tr class="podcast-row"><td class="podcast-name"><a href="{{url_for('admin.show_eps', castname=item[0]) }}">{{ item[0] }}</td><td>{% autoescape false %}{{ item[1] }}{% endautoescape %}</td><td>{{ item[2] }}</td><td class="podcast-image"><img src="{{ url_for('serve.serve_image', img_name=item[3]) }}"></td><td><a href="{{ url_for('serve.serve_xml', castname=item[0]) }}">Podcast feed</a></td><td><a href="{{ url_for('admin.delete_cast', castname=item[0]) }}">Delete cast</a></td><td><a href="{{ url_for('admin.edit_cast', castname=item[0]) }}">Edit cast</a></td><td><a href="{{ url_for('stats.stats_cast', castname=item[0]) }}">Feed statistics</a></td><td><a href="{{ url_for('admin.new_ep', castname=item[0]) }}">Add episode</a></td></tr>
 {% endfor %}
 </table>
 <a href="/admin/new/cast">Add a new podcast to your account</a>
@@ -18,4 +18,4 @@
     <p><a href="/admin/new/cast">Add a new podcast to your account</a>
 {% endif %}
 </div>
-{% endblock %}
+  {% endblock %}

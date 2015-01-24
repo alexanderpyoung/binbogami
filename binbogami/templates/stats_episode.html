@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block head %}
+  <title>Statistics for {{ episode_name }}</title>
+{% endblock %}
+{% block body %}
+<div class="container">
+<h1>Statistics for the "{{ episode_name }}" episode</h1>
+<table class="stats-table">
+  <tr class="stats-header"><td>Date</td><td>IP</td><td>Referrer</td></tr>
+  {% for item in ep_hits %}
+  <tr class="stats-row"><td>{{ item[3] }}</td><td>{{ item[4] }}</td><td>{{ item[5] }}</td><tr>
+  {% endfor %}
+</table>
+</div>
+{% endblock %}

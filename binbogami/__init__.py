@@ -6,6 +6,7 @@ from binbogami.views.log import *
 from binbogami.views.admin import *
 from binbogami.views.serve import *
 from binbogami.views.upload import *
+from binbogami.views.stats import *
 
 bbgapp = Flask(__name__)
 bbgapp.config.from_pyfile("bbg.cfg")
@@ -47,3 +48,4 @@ bbgapp.register_blueprint(log)
 bbgapp.register_blueprint(admin)
 bbgapp.register_blueprint(serve)
 bbgapp.register_blueprint(upload)
+bbgapp.register_blueprint(stats)

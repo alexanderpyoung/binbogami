@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block head %}
+  <title>Statistics for {{ podcast_name }}</title>
+{% endblock %}
+{% block body %}
+<div class="container">
+<h1>Statistics for the {{ podcast_name }} feed</h1>
+<table class="stats-table">
+  <tr class="stats-header"><td>Date</td><td>IP</td><td>Referrer</td></tr>
+  {% for item in xml_hits %}
+  <tr class="stats-row"><td>{{ item[2] }}</td><td>{{ item[3] }}</td><td>{{ item[4] }}</td><tr>
+  {% endfor %}
+</table>
+</div>
+{% endblock %}
