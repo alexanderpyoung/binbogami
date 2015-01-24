@@ -1,5 +1,5 @@
-from flask import Blueprint, session, render_template
-
+from flask import Blueprint, session, render_template, request
+import werkzeug
 frontpage = Blueprint("frontpage",__name__,
                       template_folder="templates")
 

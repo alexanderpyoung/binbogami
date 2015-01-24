@@ -1,5 +1,5 @@
 from flask import Blueprint, g, send_from_directory, current_app
-from flask import Markup, request, Response
+from flask import Markup, request, Response, abort, session
 from werkzeug.utils import secure_filename
 from lxml import etree as ET
 from datetime import datetime
@@ -14,7 +14,13 @@ def serve_file(castname, epname):
     safe_episode_name = secure_filename(epname)
     safe_name = safe_podcast_name + "/" + safe_episode_name
     filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], safe_name)
-    return send_file_206(filepath, safe_name)
+    if os.path.isfile(filepath):
+        if 'name' not in session:
+          epname_noext = epname.rsplit(".")[0]
+          stats_update_episode(epname_noext)
+        return send_file_206(filepath, safe_name)
+    else:
+      abort(404)
 
 @serve.after_request
 def after_request(response):
@@ -176,7 +182,26 @@ def build_xml(meta, casts, name):
     return Markup(doctype + body)
 
 def stats_update_xml(cast):
-    pass
+    #we pass the integer id in here as we've already done the query for XML serving
+    referrer = request.referrer
+    ip = request.remote_addr
+    date = str(datetime.now())
+    g.sqlite_db.execute("insert into stats_xml (podcast, date, ip, referrer) values (?, ?, ?, ?)",
+        [cast, date, ip, referrer])
+    g.sqlite_db.commit()
 
 def stats_update_episode(episode):
-    pass
+    referrer = request.referrer
+    ip = request.remote_addr
+    date = str(datetime.now())
+    # otherwise we get multiple entries from 206es
+    # this is based on Firefox's behaviour - Safari probably does something awful
+    if referrer is None or episode not in referrer:
+        db_ids = g.sqlite_db.execute("select id, podcast from podcasts_casts where title = (?)",
+            [episode]).fetchone()
+        episode_id = db_ids[0]
+        podcast_id = db_ids[1]
+        g.sqlite_db.execute("insert into stats_episodes (podcast, podcast_episode, date, ip, referrer) \
+            values (?, ?, ?, ?, ?)", [podcast_id, episode_id, date, ip, referrer])
+        g.sqlite_db.commit()
+

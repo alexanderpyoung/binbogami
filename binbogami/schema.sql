@@ -32,9 +32,9 @@ create table podcasts_casts (
     title text not null,
     description text not null,
     castfile text not null,
-	date text not null,
-	length text not null,
-	filetype text not null,
+  	date text not null,
+	  length text not null,
+	  filetype text not null,
     foreign key(podcast) references podcasts_header(id)
 );
 
@@ -42,6 +42,18 @@ create table stats_xml (
     id integer primary key autoincrement,
     podcast integer not null,
     date text not null,
+    ip text not null, 
+    referrer text not null,
     foreign key(podcast) references podcasts_header(id)
 );
 
+create table stats_episodes (
+    id integer primary key autoincrement,
+    podcast integer not null,
+    podcast_episode integer not null,
+    date text not null,
+    ip text not null,
+    referrer text not null,
+    foreign key(podcast) references podcasts_header(id)
+    foreign key(podcast_episode) references podcasts_casts(id)
+);
