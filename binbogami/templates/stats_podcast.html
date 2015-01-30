@@ -5,6 +5,7 @@
 {% block body %}
 <div class="container">
 <h1>Statistics for the {{ podcast_name }} feed</h1>
+<img src="/stats/graphs/{{ podcast_name }}" />
 <table class="stats-table">
   <tr class="stats-header"><td>Date</td><td>IP</td><td>Referrer</td></tr>
   {% for item in xml_hits %}

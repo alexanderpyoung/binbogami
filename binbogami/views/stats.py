@@ -5,6 +5,7 @@ from werkzeug import BaseResponse as Response
 import numpy
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.ticker as ticker
 import io
 from pylab import rcParams
 import datetime
@@ -37,7 +38,7 @@ def stats_ep(castname, epname):
             podcast=(?) and podcast_episode=(?) order by date desc",
             [auth_podcast[0], auth_episode[0]]).fetchall()
         return render_template("stats_episode.html", episode_name=epname,
-            ep_hits=ep_hits)
+            ep_hits=ep_hits, podcast_name=castname)
       else:
         return "Not your episode, friend."
     else:
@@ -45,20 +46,28 @@ def stats_ep(castname, epname):
   else:
      return redirect(url_for('log.login'))
 
-def generate_feed_stats(feed_id):
+def generate_date(orig_string):
+  # convert the date to a "meaningful" level of granularity
+  date_dt = datetime.datetime.strptime(orig_string, "%Y-%m-%d %H:%M:%S.%f")
+  dt_string = datetime.datetime.strftime(date_dt, "%d-%m-%y")
+  date_dt_sensible = datetime.datetime.strptime(dt_string, "%d-%m-%y").date()
+  return date_dt_sensible
+
+def generate_feed_stats(feed_id, ep_id=None):
   # FIXME: there must be a less ugly way to do this
   # this doesn't provide an accurate time series, but matplotlib is fine with
   # this when datetime collections are passed
-  feed_stats = g.sqlite_db.execute("select date, ip from stats_xml where podcast=(?)",
-      [feed_id])
+  if ep_id is None:
+    feed_stats = g.sqlite_db.execute("select date, ip from stats_xml where podcast=(?)",
+      [feed_id]).fetchall()
+  else:
+    feed_stats = g.sqlite_db.execute("select date, ip from stats_episodes \
+        where podcast=(?) and podcast_episode=(?)", [feed_id, ep_id]).fetchall()
   feed_dateset = []
   feed_ip_list = []
   feed_ip_return = []
   for item in feed_stats:
-    # convert the date to a "meaningful" level of granularity
-    date_dt = datetime.datetime.strptime(item[0], "%Y-%m-%d %H:%M:%S.%f")
-    dt_string = datetime.datetime.strftime(date_dt, "%d-%m-%y")
-    date_dt_sensible = datetime.datetime.strptime(dt_string, "%d-%m-%y").date()
+    date_dt_sensible = generate_date(item[0])
     # if we haven't added the date to the list, do so
     if date_dt_sensible not in feed_dateset:
       feed_dateset.append(date_dt_sensible)
@@ -71,6 +80,24 @@ def generate_feed_stats(feed_id):
   # return a tuple, because why not
   return (feed_dateset, feed_ip_return)
 
+def shared_graphing(list_date, list_ip):
+  # set image size
+  rcParams['figure.figsize'] = 10, 5
+  # plot a graph
+  fig, ax = plt.subplots()
+  ax.xaxis.set_major_locator(mdates.DayLocator())
+  ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%y'))
+  ax.yaxis.set_major_locator(ticker.MultipleLocator())
+  ax.set_ylim(0, max(list_ip)+1)
+  ax.format_xdata = mdates.DateFormatter('%d-%m-%y')
+  ax.bar(list_date, list_ip, width=1.0, facecolor='green', align='center')
+  ax.plot(list_date, list_ip, 'yo-')
+  fig.autofmt_xdate()
+  # declare BytesIO object to stick the png in
+  stringio = io.BytesIO()
+  fig.savefig(stringio, format="png")
+  return stringio.getvalue()
+
 @stats.route("/stats/graphs/<castname>")
 def graphs_cast(castname):
   if 'username' in session:
@@ -78,23 +105,31 @@ def graphs_cast(castname):
     if authpodcast is not None:
       # get required data
       graph_stats = generate_feed_stats(authpodcast[0])
-      # set image size
-      rcParams['figure.figsize'] = 10, 5
-      # plot a graph
-      fig, ax = plt.subplots()
-      ax.xaxis.set_major_locator(mdates.DayLocator())
-      ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%y'))
-      ax.set_ylim(0, max(graph_stats[1])+1)
-      ax.format_xdata = mdates.DateFormatter('%d-%m-%y')
-      ax.bar(graph_stats[0], graph_stats[1], width=1.0, facecolor='green', align='center')
-      ax.plot(graph_stats[0], graph_stats[1], 'yo-')
-#      plt.bar(graph_stats[0], graph_stats[1], width=1.0, facecolor='green')
-      fig.autofmt_xdate()
-      # declare BytesIO object to stick the png in
-      stringio = io.BytesIO()
-      fig.savefig(stringio, format="png")
+      # build graph
+      graph_img = shared_graphing(graph_stats[0], graph_stats[1])
       # create a Response object with the png body and headers
-      response = Response(stringio.getvalue(),mimetype="image/png") 
+      response = Response(graph_img,mimetype="image/png") 
       return response
     else:
       return abort(403)
+  else:
+    return abort(403)
+
+@stats.route("/stats/graphs/<castname>/<epname>")
+def graphs_ep(castname,epname):
+  if 'username' in session:
+    authpodcast = get_id("id", castname, session['uid'])
+    if authpodcast is not None:
+      authepisode = g.sqlite_db.execute("select id from podcasts_casts where \
+          podcast=(?) and title=(?)", [authpodcast[0], epname]).fetchone()
+      if authepisode is not None:
+        graph_stats = generate_feed_stats(authpodcast[0], authepisode[0])
+        graph_img = shared_graphing(graph_stats[0], graph_stats[1])
+        response = Response(graph_img, mimetype="image/png")
+        return response
+      else:
+        return abort(403)
+    else:
+      return abort(403)
+  else:
+    return abort(403)
