@@ -2,7 +2,6 @@ from flask import Blueprint, g, current_app, abort, session, redirect, url_for
 from flask import render_template
 from binbogami.views.admin import get_id
 from werkzeug import BaseResponse as Response
-import numpy
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
@@ -11,6 +10,9 @@ from pylab import rcParams
 import datetime
 
 stats = Blueprint("stats", __name__, template_folder="templates")
+# when we use SQLite 'between', it's an exclusive limit. Add a day.
+date_now = datetime.datetime.now().date() + datetime.timedelta(days=1)
+date_aweekago = date_now - datetime.timedelta(days=7)
 
 @stats.route("/stats/<castname>")
 def stats_cast(castname):
@@ -53,16 +55,18 @@ def generate_date(orig_string):
   date_dt_sensible = datetime.datetime.strptime(dt_string, "%d-%m-%y").date()
   return date_dt_sensible
 
-def generate_feed_stats(feed_id, ep_id=None):
+def generate_feed_stats(feed_id, starttime, endtime, ep_id=None):
   # FIXME: there must be a less ugly way to do this
   # this doesn't provide an accurate time series, but matplotlib is fine with
   # this when datetime collections are passed
   if ep_id is None:
-    feed_stats = g.sqlite_db.execute("select date, ip from stats_xml where podcast=(?)",
-      [feed_id]).fetchall()
+    feed_stats = g.sqlite_db.execute("select date, ip from stats_xml where \
+        podcast=(?) and date between (?) and (?)", \
+      [feed_id, starttime, endtime]).fetchall()
   else:
     feed_stats = g.sqlite_db.execute("select date, ip from stats_episodes \
-        where podcast=(?) and podcast_episode=(?)", [feed_id, ep_id]).fetchall()
+        where podcast=(?) and podcast_episode=(?) and date between (?) and (?)",
+        [feed_id, ep_id, starttime, endtime]).fetchall()
   feed_dateset = []
   feed_ip_list = []
   feed_ip_return = []
@@ -83,28 +87,35 @@ def generate_feed_stats(feed_id, ep_id=None):
 def shared_graphing(list_date, list_ip):
   # set image size
   rcParams['figure.figsize'] = 10, 5
-  # plot a graph
-  fig, ax = plt.subplots()
-  ax.xaxis.set_major_locator(mdates.DayLocator())
-  ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%y'))
-  ax.yaxis.set_major_locator(ticker.MultipleLocator())
-  ax.set_ylim(0, max(list_ip)+1)
-  ax.format_xdata = mdates.DateFormatter('%d-%m-%y')
-  ax.bar(list_date, list_ip, width=1.0, facecolor='green', align='center')
-  ax.plot(list_date, list_ip, 'yo-')
-  fig.autofmt_xdate()
+  # plot a graph, if our list isn't empty
+  if list_ip:
+    fig, ax = plt.subplots()
+    ax.xaxis.set_major_locator(mdates.DayLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%y'))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator())
+    ax.set_ylim(0, max(list_ip)+1)
+    ax.format_xdata = mdates.DateFormatter('%d-%m-%y')
+    ax.bar(list_date, list_ip, width=1.0, facecolor='green', align='center')
+    ax.plot(list_date, list_ip, 'yo-')
+    fig.autofmt_xdate()
+  # otherwise, show an image of nothing
+  else:
+    fig = plt.figure()
+    plt.figtext(0.42, 0.5, "No data for this query.")
   # declare BytesIO object to stick the png in
   stringio = io.BytesIO()
   fig.savefig(stringio, format="png")
   return stringio.getvalue()
 
-@stats.route("/stats/graphs/<castname>")
-def graphs_cast(castname):
+@stats.route("/stats/graphs/<castname>", \
+    defaults={'starttime': date_aweekago, 'endtime': date_now})
+@stats.route("/stats/graphs/<castname>/<starttime>/<endtime>")
+def graphs_cast(castname, starttime, endtime):
   if 'username' in session:
     authpodcast = get_id("id", castname, session['uid'])
     if authpodcast is not None:
       # get required data
-      graph_stats = generate_feed_stats(authpodcast[0])
+      graph_stats = generate_feed_stats(authpodcast[0], starttime, endtime)
       # build graph
       graph_img = shared_graphing(graph_stats[0], graph_stats[1])
       # create a Response object with the png body and headers
@@ -115,15 +126,18 @@ def graphs_cast(castname):
   else:
     return abort(403)
 
-@stats.route("/stats/graphs/<castname>/<epname>")
-def graphs_ep(castname,epname):
+@stats.route("/stats/graphs/<castname>/<epname>",
+    defaults={'starttime': date_aweekago, 'endtime': date_now})
+@stats.route("/stats/graphs/<castname>/<epname>/<starttime>/<endtime>")   
+def graphs_ep(castname,epname, starttime, endtime):
   if 'username' in session:
     authpodcast = get_id("id", castname, session['uid'])
     if authpodcast is not None:
       authepisode = g.sqlite_db.execute("select id from podcasts_casts where \
           podcast=(?) and title=(?)", [authpodcast[0], epname]).fetchone()
       if authepisode is not None:
-        graph_stats = generate_feed_stats(authpodcast[0], authepisode[0])
+        graph_stats = generate_feed_stats(authpodcast[0], starttime, endtime,
+            authepisode[0])
         graph_img = shared_graphing(graph_stats[0], graph_stats[1])
         response = Response(graph_img, mimetype="image/png")
         return response
