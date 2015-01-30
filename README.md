@@ -3,7 +3,7 @@ binbogami
 
 A Python 3 Flask application for the creation and maintenance of podcast RSS feeds.
 
-###Dependencies
+###PyPI Dependencies
 
 bcrypt (for password hashing)
 bleach (for cleaning up user submitted content)
@@ -12,3 +12,14 @@ mutagenx (mutagen, but Py3 compatible)
 lxml (XML pretty printing)
 Pillow (image-related utilities)
 python-passlib (abstraction for bcrypt library for password hashing)
+
+##System Dependencies
+
+libxml2
+libxslt
+libjpeg
+libpng
+libfreetype
+libagg
+libffi
+pkg-config

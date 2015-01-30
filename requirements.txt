@@ -6,3 +6,8 @@ lxml
 passlib
 flask
 pillow
+numpy
+pyparsing
+pytz
+cairocffi
+matplotlib
