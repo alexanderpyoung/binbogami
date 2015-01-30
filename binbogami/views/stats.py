@@ -4,6 +4,7 @@ from binbogami.views.admin import get_id
 from werkzeug import BaseResponse as Response
 import numpy
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import io
 from pylab import rcParams
 import datetime
@@ -78,14 +79,19 @@ def graphs_cast(castname):
       # get required data
       graph_stats = generate_feed_stats(authpodcast[0])
       # set image size
-      rcParams['figure.figsize'] = 8, 3
+      rcParams['figure.figsize'] = 10, 5
       # plot a graph
-      x_loc = numpy.arange(len(graph_stats[0]))
-      plt.bar(x_loc, graph_stats[1])
-      plt.xticks(x_loc+0.8/2.0, (graph_stats[0]))
+      fig, ax = plt.subplots()
+      ax.xaxis.set_major_locator(mdates.DayLocator())
+      ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%y'))
+      ax.set_ylim(0, max(graph_stats[1])+1)
+      ax.format_xdata = mdates.DateFormatter('%d-%m-%y')
+      ax.plot(graph_stats[0], graph_stats[1])
+#      plt.bar(graph_stats[0], graph_stats[1], width=1.0, facecolor='green')
+      fig.autofmt_xdate()
       # declare BytesIO object to stick the png in
       stringio = io.BytesIO()
-      plt.savefig(stringio, format="png")
+      fig.savefig(stringio, format="png")
       # create a Response object with the png body and headers
       response = Response(stringio.getvalue(),mimetype="image/png") 
       return response
