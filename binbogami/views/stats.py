@@ -86,7 +86,8 @@ def graphs_cast(castname):
       ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%y'))
       ax.set_ylim(0, max(graph_stats[1])+1)
       ax.format_xdata = mdates.DateFormatter('%d-%m-%y')
-      ax.plot(graph_stats[0], graph_stats[1])
+      ax.bar(graph_stats[0], graph_stats[1], width=1.0, facecolor='green', align='center')
+      ax.plot(graph_stats[0], graph_stats[1], 'yo-')
 #      plt.bar(graph_stats[0], graph_stats[1], width=1.0, facecolor='green')
       fig.autofmt_xdate()
       # declare BytesIO object to stick the png in
