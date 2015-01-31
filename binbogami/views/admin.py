@@ -415,7 +415,7 @@ def edit_ep(castname,epname):
                             os.remove(cast[4])
                         except FileNotFoundError:
                             pass
-                        cast_upload(ep, podcastid, request.form['epname'], request.form['description'], "edit")
+                        cast_upload(secure_filename(ep), podcastid, request.form['epname'], request.form['description'], "edit")
                     g.sqlite_db.execute(
                         "update podcasts_casts set title=(?), description=(?) where id=(?)",
                         [request.form['epname'], request.form['description'], cast[0]]
