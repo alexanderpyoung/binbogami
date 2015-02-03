@@ -74,22 +74,22 @@
 	});
 	uploader.bind('FileUploaded', function(up, file, response) {
       response = jQuery.parseJSON(response.response);
-      if (response.error.code == 500) {
-        file.status = plupload.FAILED;
-        $('li#' + file.id).after('<span style="color: red">' + response.error.message + '</span>');
-        $('li#' + file.id).hide();
-        up.files.length = 0;
+      if (response.error != undefined) {  
+        if (response.error.code == 500) {
+          file.status = plupload.FAILED;
+          $('li#' + file.id).after('<span style="color: red">' + response.error.message + '</span>');
+          $('li#' + file.id).hide();
+          up.files.length = 0;
+        }
       }
       else {
         document.getElementById("file-upload").value = file.name;
+        document.getElementById("submit-button").disabled = false;
       }
     
-	});
-	uploader.bind('UploadComplete', function() {
-	  document.getElementById("submit-button").disabled = false;
 	});
 	document.getElementById('start-upload').onclick = function() {
     uploader.start();
     };
-	</script>
+</script>
 {% endblock %}

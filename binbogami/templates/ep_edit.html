@@ -39,45 +39,56 @@ tinymce.init({
 </div>
 
 <script type="text/javascript">
-var uploader = new plupload.Uploader({
-browse_button: 'browse', // this can be an id of a DOM element or the DOM element itself
-url: '/upload',
-multi_selection: false,
-filters: {
-	mime_types: [
-		{title: "Audio files", extensions: "mp3,ogg,spx,opus"}
-		]
-}
-});
+	var uploader = new plupload.Uploader({
+	browse_button: 'browse', // this can be an id of a DOM element or the DOM element itself
+	url: '/upload',
+	multi_selection: false,
+	runtimes: 'html5',
+	filters: {
+		mime_types: [
+			{title: "Audio files", extensions: "mp3,ogg,spx,opus"}
+			]
+	}
+	});
 
-uploader.init();
+	uploader.init();
 
-uploader.bind('FilesAdded', function(up, files) {
-var max_files = 1;
-if (up.files.length > max_files) {
-	up.splice(max_files);
-	window.alert("No more than one file to be uploaded.");
-}
-else {
-var html = '';
-plupload.each(files, function(file) {
-	html += '<li id="' + file.id + '">' + file.name + ' (' + plupload.formatSize(file.size) + ') <b></b></li>';
-});
-document.getElementById('filelist').innerHTML += html;
-}
-});
-uploader.bind('UploadProgress', function(up, file) {
-document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = '<span>' + file.percent + "%</span>";
-});
-uploader.bind('FileUploaded', function(up, file) {
-document.getElementById("file-upload").value = file.name;
-});
-uploader.bind('UploadComplete', function() {
-document.getElementById("submit-button").disabled = false;
-});
-document.getElementById('start-upload').onclick = function() {
-uploader.start();
-};
+	uploader.bind('FilesAdded', function(up, files) {
+	  var max_files = 1;
+	  if (up.files.length > max_files) {
+		  up.splice(max_files);
+		  window.alert("No more than one file to be uploaded.");
+	  }
+      else {
+	  var html = '';
+	  plupload.each(files, function(file) {
+	    html += '<li id="' + file.id + '">' + file.name + ' (' + plupload.formatSize(file.size) + ') <b></b></li>';
+	  });
+	  document.getElementById('filelist').innerHTML += html;
+      }
+	});
+	uploader.bind('UploadProgress', function(up, file) {
+	  document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = '<span class="percent">' + file.percent + "%</span>";
+	});
+	uploader.bind('FileUploaded', function(up, file, response) {
+      response = jQuery.parseJSON(response.response);
+      if (response.error != undefined) {  
+        if (response.error.code == 500) {
+          file.status = plupload.FAILED;
+          $('li#' + file.id).after('<span style="color: red">' + response.error.message + '</span>');
+          $('li#' + file.id).hide();
+          up.files.length = 0;
+        }
+      }
+      else {
+        document.getElementById("file-upload").value = file.name;
+        document.getElementById("submit-button").disabled = false;
+      }
+    
+	});
+	document.getElementById('start-upload').onclick = function() {
+    uploader.start();
+    };
 </script>
 
 {% endblock %}
