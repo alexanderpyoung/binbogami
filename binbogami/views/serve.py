@@ -33,7 +33,6 @@ def send_file_206(path, safe_name):
     if not range_header:
         return send_from_directory(current_app.config["UPLOAD_FOLDER"], safe_name)
 
-    print(path)
     size = os.path.getsize(path)
     byte1, byte2 = 0, None
 
