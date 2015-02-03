@@ -16,7 +16,7 @@ def upload_file():
                 try:
                     file.save(filepath)
                 except:
-                    raise
+                    return '{"jsonrpc" : "2.0", "error" : {"code": 500, "message": "Failed to move uploaded file, please retry your upload."}, "id" : "id"}'
                 return '{"jsonrpc" : "2.0", "result" : null, "id" : "id"}'
             else:
-                return '{"jsonrpc" : "2.0", "error" : {"code": 500, "message": "Failed to move uploaded file."}, "id" : "id"}'
+                return '{"jsonrpc" : "2.0", "error" : {"code": 500, "message": "Filetype not allowed."}, "id" : "id"}'

@@ -3,6 +3,8 @@
 	<title>{{ podcastid[1] }} | Add a new episode</title>
 	<script src="{{ url_for('static', filename='js/tinymce/tinymce.min.js') }}">
 	</script>
+  <script src="{{ url_for('static', filename='js/jquery-2.1.3.min.js') }}">
+  </script>
 	<script src="{{ url_for('static', filename='js/plupload/plupload.full.min.js') }}">
 	</script>
 	<script type="text/javascript">
@@ -56,8 +58,8 @@
 	uploader.bind('FilesAdded', function(up, files) {
 	  var max_files = 1;
 	  if (up.files.length > max_files) {
-		up.splice(max_files);
-		window.alert("No more than one file to be uploaded.");
+		  up.splice(max_files);
+		  window.alert("No more than one file to be uploaded.");
 	  }
       else {
 	  var html = '';
@@ -68,10 +70,20 @@
       }
 	});
 	uploader.bind('UploadProgress', function(up, file) {
-	  document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = '<span>' + file.percent + "%</span>";
+	  document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = '<span class="percent">' + file.percent + "%</span>";
 	});
-	uploader.bind('FileUploaded', function(up, file) {
-      document.getElementById("file-upload").value = file.name;
+	uploader.bind('FileUploaded', function(up, file, response) {
+      response = jQuery.parseJSON(response.response);
+      if (response.error.code == 500) {
+        file.status = plupload.FAILED;
+        $('li#' + file.id).after('<span style="color: red">' + response.error.message + '</span>');
+        $('li#' + file.id).hide();
+        up.files.length = 0;
+      }
+      else {
+        document.getElementById("file-upload").value = file.name;
+      }
+    
 	});
 	uploader.bind('UploadComplete', function() {
 	  document.getElementById("submit-button").disabled = false;
