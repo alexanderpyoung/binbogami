@@ -95,9 +95,14 @@ def new_cast():
             result = query.fetchone()
             #.fetchone() returns None where no results are found; .fetchall() an empty list.
             if result == None:
+                if "/" in request.form['castname']:
+                    return render_template("podcasts_new.html", 
+                        error="No forward slashes permitted in podcast name.",
+                        itunes_categories=itunes_categories)
                 if validate_url(request.form['url']) == 1:
-                    return render_template("podcasts_new.html", error="You did not supply a valid URL.",
-                                            itunes_categories=itunes_categories)
+                    return render_template("podcasts_new.html", 
+                        error="You did not supply a valid URL.",
+                        itunes_categories=itunes_categories)
                 if request.form['castname'] == "":
                     return render_template("podcasts_new.html", error="You did not supply a valid cast name.",
                                            itunes_categories=itunes_categories)
@@ -142,6 +147,12 @@ def edit_cast(castname):
                 cast_img_list = cast_details[5].rsplit("/")
                 cast_img = cast_img_list[len(cast_img_list)-1]
                 cast_img_url = request.url_root + "image/" + cast_img
+                if "/" in request.form['castname']:
+                    return render_template("podcasts_edit.html", 
+                        error="No forward slashes permitted in podcast name.",
+                        itunes_categories=itunes_categories, 
+                        cast_details=cast_details,
+                        cast_img_url=cast_img_url)
                 if request.form['castname'] == "":
                     return render_template("podcasts_edit.html", error="You did not supply a valid cast name.",
                                     itunes_categories=itunes_categories, cast_details=cast_details,
@@ -258,6 +269,9 @@ def new_ep(castname):
             if podcastid != None:
                 if request.form['epname'] == "":
                     return render_template("ep_new.html", podcastid=podcastid, error="You did not specify a valid podcast name.")
+                if "/" in request.form['epname']:
+                    return render_template("ep_new.html", podcastid=podcastid,
+                        error="No forward slashes permitted in epsiode name.")
                 ep = request.form["file-upload"]
                 query = g.sqlite_db.execute(
                     "select title from podcasts_casts where title=(?) and podcast=(?)",
@@ -387,6 +401,9 @@ def edit_ep(castname,epname):
                 if request.form['epname'] == "":
                     return render_template("ep_edit.html", podcastid=podcastid,
                                             error="You did not specify a valid podcast name.", cast=cast)
+                if "/" in request.form['epname']:
+                    return render_template("ep_edit.html", podcastid=podcastid,
+                        error="No forward slashes permitted in epsiode name.", cast=cast)
                 ep = request.form['file-upload']
                 cast_name_check = g.sqlite_db.execute(
                     "select id from podcasts_casts where title=(?)",
