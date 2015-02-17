@@ -509,12 +509,19 @@ def user_admin():
                         request.form['email'], session['uid']]
                     )
                 else:
-                    password = hash_password(request.form['password'])
-                    g.sqlite_db.execute(
-                        "update users set username=(?), name=(?), pwhash=(?), email=(?) where id=(?)",
-                        [request.form['username'], request.form['name'], password,
-                        request.form['email'], session['uid']]
-                    )
+                    if request.form['password'] == request.form['passwordconf']:
+                      password = hash_password(request.form['password'])
+                      g.sqlite_db.execute(
+                          "update users set username=(?), name=(?), pwhash=(?), email=(?) where id=(?)",
+                          [request.form['username'], request.form['name'], password,
+                          request.form['email'], session['uid']]
+                      )
+                    else:
+                        user = g.sqlite_db.execute(
+                            "select username, name, email from users where id=(?)",
+                            [session['uid']]
+                           ).fetchone()
+                        return render_template("user_admin.html", error="Passwords did not match", user=user)
                 g.sqlite_db.commit()
             else:
                 error = "Not a valid email address."
