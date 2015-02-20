@@ -20,11 +20,6 @@ def connect_db():
 def before_request():
     g.sqlite_db = connect_db()
 
-@bbgapp.teardown_appcontext
-def close_db(error):
-    if hasattr(g, "sqlite_db"):
-        g.sqlite_db.close()
-
 def get_db():
     with bbgapp.app_context():
         if not hasattr(g, "sqlite_db"):
@@ -40,7 +35,7 @@ def init_db():
                 db.cursor().executescript(f.read())
             except sqlite3.OperationalError as e:
                 print("{!r}".format(e))
-        db.commit()
+            db.commit()
 
 @bbgapp.errorhandler(401)
 def error_401(e):
