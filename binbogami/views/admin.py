@@ -278,7 +278,6 @@ def new_ep(castname):
                     [request.form['epname'], podcastid[0]]
                 )
                 result = query.fetchone()
-                print(ep)
                 if ep and result == None and len(ep) != 0:
                     cast_upload(
                         secure_filename(ep), podcastid, request.form["epname"], request.form['description'], "new"

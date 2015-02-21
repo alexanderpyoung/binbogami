@@ -1,4 +1,4 @@
-DATABASE=
-SECRET_KEY=
-UPLOAD_FOLDER=
-DEBUG=
+DATABASE="{{database}}"
+SECRET_KEY="{{secret_key}}"
+UPLOAD_FOLDER="{{upload_folder}}"
+DEBUG={{debug}}
