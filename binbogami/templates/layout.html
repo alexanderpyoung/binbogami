@@ -20,5 +20,8 @@
 		{% block body %}
 		{% endblock %}
 			</div>
+      {% if config['tracking'] %}
+        {{config['tracking']}}
+      {% endif %}
 	</body>
 </html>
