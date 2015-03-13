@@ -20,8 +20,8 @@
 		{% block body %}
 		{% endblock %}
 			</div>
-      {% if config['tracking'] %}
-        {{config['tracking']}}
+      {% if config['TRACKING'] %}
+         {{config['TRACKING']|safe}}
       {% endif %}
 	</body>
 </html>
