@@ -44,7 +44,7 @@ itunes_categories = [
 def show_casts():
     if 'username' in session:
         casts = g.sqlite_db.execute("select name, description, url, image, id from podcasts_header where owner=(?)",
-                                    session['uid'])
+                                    [session['uid']])
         rows = casts.fetchall()
         cast_list = None
         if rows != []:
