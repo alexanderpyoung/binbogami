@@ -10,9 +10,6 @@ from pylab import rcParams
 import datetime
 
 stats = Blueprint("stats", __name__, template_folder="templates")
-# when we use SQLite 'between', it's an exclusive limit. Add a day.
-date_now = datetime.datetime.now().date() + datetime.timedelta(days=1)
-date_aweekago = date_now - datetime.timedelta(days=7)
 
 @stats.route("/stats/<castname>")
 def stats_cast(castname):
@@ -107,8 +104,9 @@ def shared_graphing(list_date, list_ip):
   fig.savefig(stringio, format="png")
   return stringio.getvalue()
 
+# when we use SQLite 'between', it's an exclusive limit. Add a day.
 @stats.route("/stats/graphs/<castname>", \
-    defaults={'starttime': date_aweekago, 'endtime': date_now})
+    defaults={'starttime': (datetime.datetime.now().date() + datetime.timedelta(days=1)) - datetime.timedelta(days=7), 'endtime': datetime.datetime.now().date() + datetime.timedelta(days=1)})
 @stats.route("/stats/graphs/<castname>/<starttime>/<endtime>")
 def graphs_cast(castname, starttime, endtime):
   if 'username' in session:
@@ -127,7 +125,7 @@ def graphs_cast(castname, starttime, endtime):
     return abort(403)
 
 @stats.route("/stats/graphs/<castname>/<epname>",
-    defaults={'starttime': date_aweekago, 'endtime': date_now})
+    defaults={'starttime': (datetime.datetime.now().date() + datetime.timedelta(days=1)) - datetime.timedelta(days=7), 'endtime': datetime.datetime.now().date() + datetime.timedelta(days=1)})
 @stats.route("/stats/graphs/<castname>/<epname>/<starttime>/<endtime>")   
 def graphs_ep(castname,epname, starttime, endtime):
   if 'username' in session:
