@@ -325,7 +325,7 @@ def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
         g.sqlite_db.execute(
             "insert into podcasts_casts (podcast, title, description, castfile, date, length, filetype) values (?,?,?,?, datetime('now'),?,?)",
             [
-                podcast[0], ep_name,
+                podcast[0], ep_name.strip(),
                 ep_description, filepath,
                 file_length, file_ext
             ]
@@ -362,14 +362,14 @@ def image_upload(img, meta_array, neworedit):
                     pass
                 g.sqlite_db.execute(
                     "update podcasts_header set name=(?), description=(?), url=(?), image=(?), categories=(?) where id=(?)",
-                    [request.form['castname'], request.form['description'],
+                    [request.form['castname'].strip(), request.form['description'],
                     request.form['url'], imgpath, request.form['category'], meta_array[0]]
                 )
                 g.sqlite_db.commit()
             elif neworedit == "new":
                 g.sqlite_db.execute(
                     "insert into podcasts_header (owner, name, description, url, image, categories, explicit) values (?,?,?,?,?,?,?)",
-                    [session['uid'],request.form['castname'],
+                    [session['uid'],request.form['castname'].strip(),
                     Markup(request.form['description']).striptags(), request.form['url'],
                     imgpath, request.form['category'], request.form['explicit']]
                 )
@@ -434,7 +434,7 @@ def edit_ep(castname,epname):
                         cast_upload(secure_filename(ep), podcastid, request.form['epname'], request.form['description'], "edit")
                     g.sqlite_db.execute(
                         "update podcasts_casts set title=(?), description=(?) where id=(?)",
-                        [request.form['epname'], request.form['description'], cast[0]]
+                        [request.form['epname'].strip(), request.form['description'], cast[0]]
                     )
                     g.sqlite_db.commit()
                     return "Success."
