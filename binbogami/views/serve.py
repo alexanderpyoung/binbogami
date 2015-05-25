@@ -179,7 +179,7 @@ def build_xml(meta, casts, name):
         #Content
         cast_title.text = cast[2]
         cast_description.text = cast[3]
-        cast_date.text = datetime.strptime(cast[5] + "00", "%Y-%m-%d %H:%M:%S.%f%z").strftime("%a, %d %b %Y %H:%M:%S %z")
+        cast_date.text = datetime.strftime(cast[5], "%a, %d %b %Y %H:%M:%S %z")
         cast_guid.text = encoded_url
 
     #XML miscellanea

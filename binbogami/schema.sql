@@ -32,7 +32,7 @@ create table podcasts_casts (
     title text not null,
     description text not null,
     castfile text not null,
-  	date text not null,
+  	date timestamp with time zone not null,
 	  length text not null,
 	  filetype text not null
 );

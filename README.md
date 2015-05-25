@@ -12,6 +12,7 @@ A Python 3 Flask application for the creation and maintenance of podcast RSS fee
 * lxml (XML pretty printing)
 * Pillow (image-related utilities)
 * python-passlib (abstraction for bcrypt library for password hashing)
+* psycopg2 (for postgres)
 
 ##System Dependencies
 
@@ -24,3 +25,4 @@ A Python 3 Flask application for the creation and maintenance of podcast RSS fee
 * libffi
 * pkg-config
 * (on Debian systems) python3-tk
+* postgres
