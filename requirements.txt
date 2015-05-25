@@ -11,3 +11,5 @@ pyparsing
 pytz
 cairocffi
 matplotlib
+psycopg2
+testing.postgresql

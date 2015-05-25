@@ -11,26 +11,32 @@ def reg():
     error = None
     success = None
     if request.method == 'POST':
-        userexist = g.sqlite_db.execute("select id from users where username=(?)",
+        # the standard library sqlite interface allows us to call empty returned
+        # queries as None or [] for fetch()/fetchall() - psycopg2 doesn't.
+        g.db_cursor.execute("select id from users where username=%s",
                                         [request.form['username']])
-        emailexist = g.sqlite_db.execute("select id from users where email=(?)",
+        userexist_rows = g.db_cursor.rowcount
+        g.db_cursor.execute("select id from users where email=%s",
                                         [request.form['email']])
-        if len(userexist.fetchall()) != 0:
+        emailexist_rows = g.db_cursor.rowcount 
+
+        if userexist_rows is not 0:
             error = "Username already in use."
-        elif len(emailexist.fetchall()) != 0:
+        elif emailexist_rows is not 0:
             error = "Email address already in use."
         elif not check_email(request.form["email"]):
             error = "Not a valid email address."
         else:
             passwordhashed = hash_password(request.form['password'])
-            g.sqlite_db.execute(
-                "insert into users (username, name, pwhash, email) values (?, ?, ?, ?)",
+            g.db_cursor.execute(
+                "insert into users (username, name, pwhash, email) values (%s, %s, %s, %s)",
                 [request.form['username'], request.form['name'], passwordhashed,
                 request.form['email']]
             )
-            g.sqlite_db.commit()
+            g.db.commit()
 
-            login_details = g.sqlite_db.execute("select * from users where username=(?)", [request.form["username"]]).fetchone()
+            g.db_cursor.execute("select * from users where username=%s", [request.form["username"]])
+            login_details = g.db_cursor.fetchone()
             create_session(login_details)
             return redirect(url_for('admin.show_casts'))
 

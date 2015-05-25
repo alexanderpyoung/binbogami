@@ -43,13 +43,14 @@ itunes_categories = [
 @admin.route("/admin")
 def show_casts():
     if 'username' in session:
-        casts = g.sqlite_db.execute("select name, description, url, image, id from podcasts_header where owner=(?)",
+        g.db_cursor.execute("select name, description, url, image, id from podcasts_header where owner=%s",
                                     [session['uid']])
-        rows = casts.fetchall()
+        rows = g.db_cursor.rowcount
         cast_list = None
-        if rows != []:
+        if rows is not 0:
+            fetch_casts = g.db_cursor.fetchall()
             cast_list = []
-            for items in rows:
+            for items in fetch_casts:
                 imgurlsplit = items[3].rsplit("/")
                 imgurl = imgurlsplit[len(imgurlsplit)-1]
                 cast_list.append((items[0], items[1], items[2], imgurl))
@@ -64,13 +65,15 @@ def show_eps(castname):
     if 'username' in session:
         podcastid = get_id("id, name", castname, session['uid'])
         if podcastid != None:
-            eps = g.sqlite_db.execute(
-                "select title, description, castfile, filetype from podcasts_casts where podcast=(?) order by date desc",
+            g.db_cursor.execute(
+                "select title, description, castfile, filetype from podcasts_casts where podcast=%s order by date desc",
                 [podcastid[0]]
-            ).fetchall()
+            )
+            eps = g.db_cursor.rowcount
             list_template = []
-            if eps != []:
-                for ep in eps:
+            if eps is not 0:
+                eps_list = g.db_cursor.fetchall()
+                for ep in eps_list:
                     cast_url = url_for("serve.serve_file", castname=podcastid[1],
                                         epname=ep[0]) + "." + ep[3]
                     list_template.append((ep[0], ep[1], cast_url))
@@ -88,22 +91,21 @@ def new_cast():
         if request.method == "GET":
             return render_template("podcasts_new.html", itunes_categories=itunes_categories)
         elif request.method == "POST":
-            #only one podcast for each name on the server; owner doesn't matter
-            query = g.sqlite_db.execute("select name from podcasts_header where name=(?)",
+            # only one podcast for each name on the server; owner doesn't matter
+            g.db_cursor.execute("select name from podcasts_header where name=%s",
                                 [request.form['castname']]
             )
-            result = query.fetchone()
-            #.fetchone() returns None where no results are found; .fetchall() an empty list.
-            if result == None:
+            result = g.db_cursor.rowcount
+            if result is 0:
                 if "/" in request.form['castname']:
                     return render_template("podcasts_new.html", 
                         error="No forward slashes permitted in podcast name.",
                         itunes_categories=itunes_categories)
                 if validate_url(request.form['url']) == 1:
-                    return render_template("podcasts_new.html", 
+                           return render_template("podcasts_new.html", 
                         error="You did not supply a valid URL.",
                         itunes_categories=itunes_categories)
-                if request.form['castname'] == "":
+                if request.form['castname'].strip() == "":
                     return render_template("podcasts_new.html", error="You did not supply a valid cast name.",
                                            itunes_categories=itunes_categories)
                 img = request.files['img']
@@ -153,7 +155,7 @@ def edit_cast(castname):
                         itunes_categories=itunes_categories, 
                         cast_details=cast_details,
                         cast_img_url=cast_img_url)
-                if request.form['castname'] == "":
+                if request.form['castname'].strip() == "":
                     return render_template("podcasts_edit.html", error="You did not supply a valid cast name.",
                                     itunes_categories=itunes_categories, cast_details=cast_details,
                                     cast_img_url=cast_img_url)
@@ -163,11 +165,13 @@ def edit_cast(castname):
                                             cast_details=cast_details,
                                             cast_img_url=cast_img_url)
                 if request.form['castname'] != podcastid[1]:
-                    episodes = g.sqlite_db.execute(
-                        "select id, title, castfile, filetype from podcasts_casts where podcast=(?)",
+                    g.db_cursor.execute(
+                        "select id, title, castfile, filetype from podcasts_casts where podcast=%s",
                         [podcastid[0]]
-                    ).fetchall()
-                    if len(episodes) != 0:
+                    )
+                    episode_count = g.db_cursor.rowcount
+                    if episode_count is not 0:
+                        episodes = g.db_cursor.fetchall()
                         new_folder = False
                         for episode in episodes:
                             secure_podcast_name = secure_filename(request.form['castname'])
@@ -182,11 +186,11 @@ def edit_cast(castname):
                                 os.mkdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name))
                                 new_folder = True
                             os.rename(episode[2], filepath)
-                            g.sqlite_db.execute(
-                                "update podcasts_casts set castfile=(?) where id=(?)",
+                            g.db_cursor.execute(
+                                "update podcasts_casts set castfile=%s where id=%s",
                                 [filepath, episode[0]]
                             )
-                            g.sqlite_db.commit()
+                            g.db.commit()
                         if new_folder == True:
                             os.rmdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_filename(cast_details[2])))
                 img = request.files['img']
@@ -199,12 +203,12 @@ def edit_cast(castname):
                     else:
                         return "Image incorrect format."
                 else:
-                    g.sqlite_db.execute(
-                        "update podcasts_header set name=(?), description=(?), url=(?), categories=(?), explicit=(?) where id=(?)",
+                    g.db_cursor.execute(
+                        "update podcasts_header set name=%s, description=%s, url=%s, categories=%s, explicit=%s where id=%s",
                         [request.form['castname'], Markup(request.form['description']).striptags(),
                         request.form['url'], request.form['category'], request.form['explicit'], podcastid[0]]
                     )
-                    g.sqlite_db.commit()
+                    g.db.commit()
                     return redirect(url_for('admin.show_casts'))
             else:
                 abort(401)
@@ -220,36 +224,39 @@ def delete_cast(castname):
         podcastid = get_id("id", castname, session['uid'])
         if podcastid != None:
             # Get and delete files
-            query = g.sqlite_db.execute(
-                "select castfile from podcasts_casts where podcast=(?)",
+            g.db_cursor.execute(
+                "select castfile from podcasts_casts where podcast=%s",
                 [podcastid[0]]
             )
-            results = query.fetchall()
-            for result in results:
+            if g.db_cursor.rowcount is not 0:
+                results = g.db_cursor.fetchall()
+                for result in results:
+                    try:
+                        os.remove(result[0])
+                    except FileNotFoundError:
+                        pass
+                g.db_cursor.execute(
+                    "select image from podcasts_header where id=%s",
+                    [podcastid[0]]
+                )
+                results = g.db_cursor.fetchone()
                 try:
-                    os.remove(result[0])
+                    os.remove(results[0])
                 except FileNotFoundError:
                     pass
-            query = g.sqlite_db.execute(
-                "select image from podcasts_header where id=(?)",
-                [podcastid[0]]
-            )
-            results = query.fetchone()
-            try:
-                os.remove(results[0])
-            except FileNotFoundError:
-                pass
-            #Do the associated database operations
-            g.sqlite_db.execute(
-                "delete from podcasts_header where name=(?)",
-                [castname]
-            )
-            g.sqlite_db.execute(
-                "delete from podcasts_casts where podcast=(?)",
-                [podcastid[0]]
-            )
-            g.sqlite_db.commit()
-            return redirect(url_for('admin.show_casts'))
+                #Do the associated database operations
+                g.db_cursor.execute(
+                    "delete from podcasts_header where name=%s",
+                    [castname]
+                )
+                g.db_cursor.execute(
+                    "delete from podcasts_casts where podcast=%s",
+                    [podcastid[0]]
+                )
+                g.db.commit()
+                return redirect(url_for('admin.show_casts'))
+            else:
+                return "Trying to delete a podcast that doesn't exist."
         else:
             return "Sorry, the podcast you are attempting to delete does not exist."
     else:
@@ -267,18 +274,18 @@ def new_ep(castname):
                 return "This cast does not exist, or you do not own it."
         elif request.method == "POST":
             if podcastid != None:
-                if request.form['epname'] == "":
+                if request.form['epname'].strip() == "":
                     return render_template("ep_new.html", podcastid=podcastid, error="You did not specify a valid podcast name.")
                 if "/" in request.form['epname']:
                     return render_template("ep_new.html", podcastid=podcastid,
                         error="No forward slashes permitted in epsiode name.")
                 ep = request.form["file-upload"]
-                query = g.sqlite_db.execute(
-                    "select title from podcasts_casts where title=(?) and podcast=(?)",
+                g.db_cursor.execute(
+                    "select title from podcasts_casts where title=%s and podcast=%s",
                     [request.form['epname'], podcastid[0]]
                 )
-                result = query.fetchone()
-                if ep and result == None and len(ep) != 0:
+                result = g.db_cursor.rowcount
+                if ep and result is 0 and len(ep) != 0:
                     cast_upload(
                         secure_filename(ep), podcastid, request.form["epname"], request.form['description'], "new"
                     )
@@ -322,20 +329,20 @@ def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
         return "This shouldn't happen"
 
     if neworedit == "new":
-        g.sqlite_db.execute(
-            "insert into podcasts_casts (podcast, title, description, castfile, date, length, filetype) values (?,?,?,?, datetime('now'),?,?)",
+        g.db_cursor.execute(
+            "insert into podcasts_casts (podcast, title, description, castfile, date, length, filetype) values (%s,%s,%s,%s, now(),%s,%s)",
             [
                 podcast[0], ep_name.strip(),
                 ep_description, filepath,
                 file_length, file_ext
             ]
         )
-        g.sqlite_db.commit()
+        g.db.commit()
     else:
-        g.sqlite_db.execute(
-            "update podcasts_casts set castfile=(?), length=(?), filetype=(?) where title=(?)",
+        g.db_cursor.execute(
+            "update podcasts_casts set castfile=%s, length=%s, filetype=%s where title=%s",
             [filepath, file_length, file_ext, ep_name])
-        g.sqlite_db.commit()
+        g.db.commit()
 
 def image_upload(img, meta_array, neworedit):
     PIL_img = Image.open(img)
@@ -360,20 +367,20 @@ def image_upload(img, meta_array, neworedit):
                     os.remove(meta_array[2])
                 except FileNotFoundError:
                     pass
-                g.sqlite_db.execute(
-                    "update podcasts_header set name=(?), description=(?), url=(?), image=(?), categories=(?) where id=(?)",
+                g.db_cursor.execute(
+                    "update podcasts_header set name=%s, description=%s, url=%s, image=%s, categories=%s where id=%s",
                     [request.form['castname'].strip(), request.form['description'],
                     request.form['url'], imgpath, request.form['category'], meta_array[0]]
                 )
-                g.sqlite_db.commit()
+                g.db.commit()
             elif neworedit == "new":
-                g.sqlite_db.execute(
-                    "insert into podcasts_header (owner, name, description, url, image, categories, explicit) values (?,?,?,?,?,?,?)",
+                g.db_cursor.execute(
+                    "insert into podcasts_header (owner, name, description, url, image, categories, explicit) values (%s,%s,%s, %s,%s,%s,%s)",
                     [session['uid'],request.form['castname'].strip(),
                     Markup(request.form['description']).striptags(), request.form['url'],
                     imgpath, request.form['category'], request.form['explicit']]
                 )
-                g.sqlite_db.commit()
+                g.db.commit()
             else:
                 return "This should not happen."
             return 0
@@ -386,29 +393,33 @@ def image_upload(img, meta_array, neworedit):
 def edit_ep(castname,epname):
     if 'username' in session:
         podcastid = get_id("id, name, owner", castname, session['uid'])
-        cast = g.sqlite_db.execute(
-            "select id, podcast, title, description, castfile, filetype from podcasts_casts where title=(?)",
+        g.db_cursor.execute(
+            "select id, podcast, title, description, castfile, filetype from podcasts_casts where title=%s",
             [epname]
-        ).fetchone()
+        )
+        cast_rows = g.db_cursor.rowcount
+        if cast_rows is not 0:
+            cast = g.db_cursor.fetchone()
         if request.method == "GET":
-            if cast != None:
+            if cast_rows is not 0:
                 return render_template("ep_edit.html", podcastid=podcastid, cast=cast)
             else:
                 return "No such episode."
         if request.method == "POST":
             if podcastid != None:
-                if request.form['epname'] == "":
+                if request.form['epname'].strip() == "":
                     return render_template("ep_edit.html", podcastid=podcastid,
                                             error="You did not specify a valid podcast name.", cast=cast)
                 if "/" in request.form['epname']:
                     return render_template("ep_edit.html", podcastid=podcastid,
                         error="No forward slashes permitted in epsiode name.", cast=cast)
                 ep = request.form['file-upload']
-                cast_name_check = g.sqlite_db.execute(
-                    "select id from podcasts_casts where title=(?)",
+                g.db_cursor.execute(
+                    "select id from podcasts_casts where title=%s",
                     [request.form['epname']]
-                ).fetchone()
-                if cast_name_check == None or (cast_name_check != None \
+                )
+                cast_name_check = g.db_cursor.rowcount
+                if cast_name_check is 0 or (cast_name_check is not 0 \
                 and request.form['epname'] == cast[2]):
                     if len(ep) == 0:
                         secure_cast_name = secure_filename(castname)
@@ -421,22 +432,22 @@ def edit_ep(castname,epname):
                             secure_file_ext
                         )
                         os.rename(cast[4], filepath)
-                        g.sqlite_db.execute(
-                            "update podcasts_casts set castfile=(?) where id=(?)",
+                        g.db_cursor.execute(
+                            "update podcasts_casts set castfile=%s where id=%s",
                             [filepath, cast[0]]
                         )
-                        g.sqlite_db.commit()
+                        g.db.commit()
                     else:
                         try:
                             os.remove(cast[4])
                         except FileNotFoundError:
                             pass
                         cast_upload(secure_filename(ep), podcastid, request.form['epname'], request.form['description'], "edit")
-                    g.sqlite_db.execute(
-                        "update podcasts_casts set title=(?), description=(?) where id=(?)",
+                    g.db_cursor.execute(
+                        "update podcasts_casts set title=%s, description=%s where id=%s",
                         [request.form['epname'].strip(), request.form['description'], cast[0]]
                     )
-                    g.sqlite_db.commit()
+                    g.db.commit()
                     return "Success."
                 else:
                     return "Already have a podcast by that name."
@@ -448,11 +459,13 @@ def delete_ep(castname, epname):
     if 'username' in session:
         # 1) Does the episode exist? 2) Does it belong to the logged in user?
         podcastid = get_id("id", castname, session['uid'])
-        episode = g.sqlite_db.execute(
-            "select castfile from podcasts_casts where podcast=(?) and title=(?)",
+        g.db_cursor.execute(
+            "select castfile from podcasts_casts where podcast=%s and title=%s",
             [podcastid[0], epname]
-        ).fetchall()
-        if podcastid != None and episode != []:
+        )
+        ep_count = g.db_cursor.rowcount
+        if podcastid != None and episode is not 0:
+            episode = g.db_cursor.fetchall()
             # Get and delete file
             for ep in episode:
                 try:
@@ -460,11 +473,11 @@ def delete_ep(castname, epname):
                 except FileNotFoundError:
                     pass
             #Do the associated database operations
-            g.sqlite_db.execute(
-                "delete from podcasts_casts where podcast=(?) and title=(?)",
+            g.db_cursor.execute(
+                "delete from podcasts_casts where podcast=%s and title=%s",
                 [podcastid[0], epname]
             )
-            g.sqlite_db.commit()
+            g.db.commit()
             return redirect(url_for('admin.show_casts'))
         else:
             return "Sorry, the podcast you are attempting to delete does not exist."
@@ -473,11 +486,16 @@ def delete_ep(castname, epname):
         abort(401)
 
 def get_id(query, castname, owner):
-    getid = g.sqlite_db.execute(
-        "select " + query +" from podcasts_header where name=(?) and owner=(?)",
+    g.db_cursor.execute(
+        "select " + query +" from podcasts_header where name=%s and owner=%s",
         [castname, owner]
     )
-    return getid.fetchone()
+    rows = g.db_cursor.rowcount
+    # emulate the behaviour of sqlite3's standard execute call
+    if rows is not 0:
+        return g.db_cursor.fetchone()
+    else:
+        return None
 
 def validate_url(url):
     regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
@@ -492,44 +510,50 @@ def user_admin():
     #FIXME: As it is, we could register with one email address then change it
     #       to an existing registration, don't think I care enough to fix.
     if 'username' in session:
-        user = g.sqlite_db.execute(
-            "select username, name, email from users where id=(?)",
+        g.db_cursor.execute(
+            "select username, name, email from users where id=%s",
             [session['uid']]
-        ).fetchone()
+        )
+        user_count = g.db_cursor.rowcount
+        if user_count is not 0:
+            user = g.db_cursor.fetchone()
+        else:
+            user = None
         if request.method == "GET":
             return render_template("user_admin.html", user=user)
         else:
             error = None
             if check_email(request.form['email']):
                 if len(request.form['password']) == 0:
-                    g.sqlite_db.execute(
-                        "update users set username=(?), name=(?), email=(?) where id=(?)",
+                    g.db_cursor.execute(
+                        "update users set username=%s, name=%s, email=%s where id=%s",
                         [request.form['username'], request.form['name'],
                         request.form['email'], session['uid']]
                     )
                 else:
                     if request.form['password'] == request.form['passwordconf']:
                       password = hash_password(request.form['password'])
-                      g.sqlite_db.execute(
-                          "update users set username=(?), name=(?), pwhash=(?), email=(?) where id=(?)",
+                      g.db_cursor.execute(
+                          "update users set username=%s, name=%s, pwhash=%s, email=%s where id=%s",
                           [request.form['username'], request.form['name'], password,
                           request.form['email'], session['uid']]
                       )
                     else:
-                        user = g.sqlite_db.execute(
-                            "select username, name, email from users where id=(?)",
-                            [session['uid']]
-                           ).fetchone()
                         return render_template("user_admin.html", error="Passwords did not match", user=user)
-                g.sqlite_db.commit()
+                g.db.commit()
             else:
                 error = "Not a valid email address."
             #Call the database again to update the array that is passed to the
             #template
-            user = g.sqlite_db.execute(
-                "select username, name, email from users where id=(?)",
+            g.db_cursor.execute(
+                "select username, name, email from users where id=%s",
                 [session['uid']]
-            ).fetchone()
-            return render_template("user_admin.html", user=user, error=error)
+            )
+            user_count = g.db_cursor.rowcount
+            if user_count is not 0:
+                user = g.db_cursor.fetchone()
+                return render_template("user_admin.html", user=user, error=error)
+            else:
+                return redirect(url_for('log.logout'))
     else:
         abort(401)

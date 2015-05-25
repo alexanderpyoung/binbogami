@@ -16,8 +16,13 @@ def stats_cast(castname):
   if 'username' in session:
       auth = get_id("id", castname, session['uid'])
       if auth is not None:
-          xml_hits = g.sqlite_db.execute("select * from stats_xml where podcast=(?) \
-              order by date desc", [auth[0]]).fetchall()
+          g.db_cursor.execute("select * from stats_xml where podcast=%s \
+              order by date desc", [auth[0]])
+          xml_rows = g.db_cursor.rowcount
+          if xml_rows is not 0:
+              xml_hits = g.db_cursor.fetchall()
+          else:
+              xml_hits = []
           return render_template("stats_podcast.html", podcast_name=castname, 
               xml_hits=xml_hits)
       else:
@@ -30,12 +35,15 @@ def stats_ep(castname, epname):
   if 'username' in session:
     auth_podcast = get_id("id", castname, session['uid'])
     if auth_podcast is not None:
-      auth_episode = g.sqlite_db.execute("select id from podcasts_casts where \
-          title=(?) and podcast=(?)", [epname, auth_podcast[0]]).fetchone()
-      if auth_episode is not None:
-        ep_hits = g.sqlite_db.execute("select * from stats_episodes where \
-            podcast=(?) and podcast_episode=(?) order by date desc",
-            [auth_podcast[0], auth_episode[0]]).fetchall()
+      g.db_cursor.execute("select id from podcasts_casts where \
+          title=%s and podcast=%s", [epname, auth_podcast[0]])
+      auth_count = g.db_cursor.rowcount
+      if auth_count is not 0:
+        auth_episode = g.db_cursor.fetchone()
+        g.db_cursor.execute("select * from stats_episodes where \
+            podcast=%s and podcast_episode=%s order by date desc",
+            [auth_podcast[0], auth_episode[0]])
+        ep_hits = g.db_cursor.fetchall()
         return render_template("stats_episode.html", episode_name=epname,
             ep_hits=ep_hits, podcast_name=castname)
       else:
@@ -45,10 +53,9 @@ def stats_ep(castname, epname):
   else:
      return redirect(url_for('log.login'))
 
-def generate_date(orig_string):
+def generate_date(orig):
   # convert the date to a "meaningful" level of granularity
-  date_dt = datetime.datetime.strptime(orig_string, "%Y-%m-%d %H:%M:%S.%f")
-  dt_string = datetime.datetime.strftime(date_dt, "%d-%m-%y")
+  dt_string = datetime.datetime.strftime(orig, "%d-%m-%y")
   date_dt_sensible = datetime.datetime.strptime(dt_string, "%d-%m-%y").date()
   return date_dt_sensible
 
@@ -57,13 +64,21 @@ def generate_feed_stats(feed_id, starttime, endtime, ep_id=None):
   # this doesn't provide an accurate time series, but matplotlib is fine with
   # this when datetime collections are passed
   if ep_id is None:
-    feed_stats = g.sqlite_db.execute("select date, ip from stats_xml where \
-        podcast=(?) and date between (?) and (?)", \
-      [feed_id, starttime, endtime]).fetchall()
+    g.db_cursor.execute("select date, ip from stats_xml where \
+            podcast=%s and date between %s and %s", \
+      [feed_id, starttime, endtime])
+    if g.db_cursor.rowcount is not 0:
+        feed_stats = g.db_cursor.fetchall()
+    else:
+        feed_stats = []
   else:
-    feed_stats = g.sqlite_db.execute("select date, ip from stats_episodes \
-        where podcast=(?) and podcast_episode=(?) and date between (?) and (?)",
-        [feed_id, ep_id, starttime, endtime]).fetchall()
+    g.db_cursor.execute("select date, ip from stats_episodes \
+        where podcast=%s and podcast_episode=%s and date between %s and %s",
+        [feed_id, ep_id, starttime, endtime])
+    if g.db_cursor.rowcount is not 0:
+        feed_stats = g.db_cursor.fetchall()
+    else:
+        feed_stats = []
   feed_dateset = []
   feed_ip_list = []
   feed_ip_return = []
@@ -131,9 +146,11 @@ def graphs_ep(castname,epname, starttime, endtime):
   if 'username' in session:
     authpodcast = get_id("id", castname, session['uid'])
     if authpodcast is not None:
-      authepisode = g.sqlite_db.execute("select id from podcasts_casts where \
-          podcast=(?) and title=(?)", [authpodcast[0], epname]).fetchone()
-      if authepisode is not None:
+      g.db_cursor.execute("select id from podcasts_casts where \
+          podcast=%s and title=%s", [authpodcast[0], epname])
+      authepisode_rows = g.db_cursor.rowcount
+      if authepisode_rows is not 0:
+        authepisode = g.db_cursor.fetchone()
         graph_stats = generate_feed_stats(authpodcast[0], starttime, endtime,
             authepisode[0])
         graph_img = shared_graphing(graph_stats[0], graph_stats[1])

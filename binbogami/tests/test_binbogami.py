@@ -2,13 +2,17 @@ import unittest
 import tempfile
 import os
 from passlib.hash import bcrypt
-import sqlite3
+import testing.postgresql
 import sys
+import psycopg2
 import binbogami
 
 class TestBinbogami(unittest.TestCase):
     def setUp(self):
-        self.db, binbogami.bbgapp.config['DATABASE'] = tempfile.mkstemp()
+        self.db_entity = testing.postgresql.Postgresql()
+        binbogami.bbgapp.config['DATABASE'] = "host=" + self.db_entity.dsn()['host'] + " port=" \
+                + str(self.db_entity.dsn()['port']) + " user=" + self.db_entity.dsn()['user'] + \
+                " dbname=" + self.db_entity.dsn()['database']
         binbogami.bbgapp.config['TESTING'] = True
         self.app = binbogami.bbgapp.test_client()
         binbogami.init_db()
@@ -19,14 +23,13 @@ class TestBinbogami(unittest.TestCase):
         # connection.
         pwbytes = 'test'
         hashedpw = bcrypt.encrypt(pwbytes)
-        db = sqlite3.connect(binbogami.bbgapp.config['DATABASE'])
-        db.execute('insert into users (username, name, pwhash, email) values (?, ?, ?, ?)',
+        db = psycopg2.connect(**self.db_entity.dsn())
+        db.cursor().execute('insert into users (username, name, pwhash, email) values (%s, %s, %s, %s)',
                                     ['admin', 'admin', hashedpw, 'test@email.com'])
         db.commit()
 
     def tearDown(self):
-        os.close(self.db)
-        os.unlink(binbogami.bbgapp.config['DATABASE'])
+        self.db_entity.stop()
 
 if __name__ == '__main__':
     unittest.main()

@@ -66,19 +66,26 @@ def serve_image(img_name):
 
 @serve.route("/<castname>/feed")
 def serve_xml(castname):
-    cast_meta = g.sqlite_db.execute(
-        "select * from podcasts_header where name=(?)",
+    g.db_cursor.execute(
+        "select * from podcasts_header where name=%s",
         [castname]
-    ).fetchone()
-    if cast_meta != None:
-        episodes = g.sqlite_db.execute(
-            "select * from podcasts_casts where podcast=(?) order by date desc",
+    )
+    cast_rows = g.db_cursor.rowcount
+    if cast_rows is not 0:
+        cast_meta = g.db_cursor.fetchone()
+        g.db_cursor.execute(
+            "select * from podcasts_casts where podcast=%s order by date desc",
             [cast_meta[0]]
-        ).fetchall()
-        name = g.sqlite_db.execute(
-            "select name from users where id=(?)",
+        )
+        if g.db_cursor.rowcount is not 0:
+            episodes = g.db_cursor.fetchall()
+        else:
+            episodes = []
+        g.db_cursor.execute(
+            "select name from users where id=%s",
             [cast_meta[1]]
-        ).fetchone()
+        )
+        name = g.db_cursor.fetchone()
         stats_update_xml(cast_meta[0])
         return build_xml(cast_meta, episodes, name)
     else:
@@ -172,7 +179,7 @@ def build_xml(meta, casts, name):
         #Content
         cast_title.text = cast[2]
         cast_description.text = cast[3]
-        cast_date.text = datetime.strptime(cast[5], "%Y-%m-%d %H:%M:%S").strftime("%a, %d %b %Y %H:%M:%S %z") + "+0000"
+        cast_date.text = datetime.strptime(cast[5] + "00", "%Y-%m-%d %H:%M:%S.%f%z").strftime("%a, %d %b %Y %H:%M:%S %z")
         cast_guid.text = encoded_url
 
     #XML miscellanea
@@ -185,9 +192,9 @@ def stats_update_xml(cast):
     referrer = request.referrer
     ip = request.remote_addr
     date = str(datetime.now())
-    g.sqlite_db.execute("insert into stats_xml (podcast, date, ip, referrer) values (?, ?, ?, ?)",
+    g.db_cursor.execute("insert into stats_xml (podcast, date, ip, referrer) values (%s, %s, %s, %s)",
         [cast, date, ip, referrer])
-    g.sqlite_db.commit()
+    g.db.commit()
 
 def stats_update_episode(episode):
     referrer = request.referrer
@@ -196,11 +203,12 @@ def stats_update_episode(episode):
     # otherwise we get multiple entries from 206es
     # this is based on Firefox's behaviour - Safari probably does something awful
     if referrer is None or episode not in referrer:
-        db_ids = g.sqlite_db.execute("select id, podcast from podcasts_casts where title = (?)",
-            [episode]).fetchone()
-        episode_id = db_ids[0]
-        podcast_id = db_ids[1]
-        g.sqlite_db.execute("insert into stats_episodes (podcast, podcast_episode, date, ip, referrer) \
-            values (?, ?, ?, ?, ?)", [podcast_id, episode_id, date, ip, referrer])
-        g.sqlite_db.commit()
+        g.db_cursor.execute("select id, podcast from podcasts_casts where title = %s",
+            [episode])
+        db_cursor_ids = g.db_cursor.fetchone()
+        episode_id = db_cursor_ids[0]
+        podcast_id = db_cursor_ids[1]
+        g.db_cursor.execute("insert into stats_episodes (podcast, podcast_episode, date, ip, referrer) \
+            values (%s, %s, %s, %s, %s)", [podcast_id, episode_id, date, ip, referrer])
+        g.db.commit()
 

@@ -10,15 +10,16 @@ def login():
     if request.method == "GET":
         return render_template("login.html")
     elif request.method == "POST":
-        user = g.sqlite_db.execute("select * from users where username=(?)",
+        g.db_cursor.execute("select * from users where username=%s",
                                     [request.form["username"]])
-        row = user.fetchone()
-        if row == None:
+        row = g.db_cursor.rowcount
+        if row is 0:
             error = "Incorrect username and password, please try again."
             return render_template("login.html", error=error)
         else:
-            if bcrypt.verify(request.form["password"], row[3]):
-                create_session(row)
+            fetch = g.db_cursor.fetchone()
+            if bcrypt.verify(request.form["password"], fetch[3]):
+                create_session(fetch)
                 return redirect(url_for('admin.show_casts'))
             else:
                 error = "Incorrect username and password, please try again."

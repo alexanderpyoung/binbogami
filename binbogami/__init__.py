@@ -1,4 +1,4 @@
-import sqlite3
+import psycopg2
 from flask import Flask, g
 from binbogami.views.frontpage import *
 from binbogami.views.register import *
@@ -12,19 +12,20 @@ bbgapp = Flask(__name__)
 bbgapp.config.from_pyfile("bbg.cfg")
 
 def connect_db():
-    db = sqlite3.connect(bbgapp.config['DATABASE'])
+    db = psycopg2.connect(bbgapp.config['DATABASE'])
     return db
 
 
 @bbgapp.before_request
 def before_request():
-    g.sqlite_db = connect_db()
-
+    g.db = connect_db()
+    g.db_cursor = g.db.cursor()
+    
 def get_db():
     with bbgapp.app_context():
-        if not hasattr(g, "sqlite_db"):
-            g.sqlite_db = connect_db()
-        return g.sqlite_db
+        if not hasattr(g, "db"):
+            g.db = connect_db()
+        return g.db
 
 
 def init_db():
@@ -32,8 +33,8 @@ def init_db():
         db = get_db()
         with bbgapp.open_resource('schema.sql', mode='r') as f:
             try:
-                db.cursor().executescript(f.read())
-            except sqlite3.OperationalError as e:
+                db.cursor().execute(f.read())
+            except psycopg2.OperationalError as e:
                 print("{!r}".format(e))
             db.commit()
 
