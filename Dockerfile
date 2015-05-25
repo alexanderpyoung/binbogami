@@ -7,6 +7,7 @@ ADD . /opt/binbogami
 WORKDIR /opt/binbogami
 RUN pip3 install -r requirements.txt
 # Set up config
+# THIS NEEDS CHANGING TO DEAL WITH POSTGRES
 RUN cp /opt/binbogami/binbogami/bbg.cfg.sample /opt/binbogami/binbogami/bbg.cfg
 RUN sed -i 's@{{database}}@\/opt\/binbogami\/bbg.db@g' /opt/binbogami/binbogami/bbg.cfg
 RUN sed -i 's@{{secret_key}}@'$(openssl rand -hex 2048)'@g' /opt/binbogami/binbogami/bbg.cfg
