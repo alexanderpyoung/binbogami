@@ -13,7 +13,7 @@ from binbogami.views.register import check_email
 
 admin = Blueprint("admin", __name__, template_folder="templates")
 
-#itunes_categories = ["Arts", "Design", "Fashion &amp; Beauty", "Food",
+# itunes_categories = ["Arts", "Design", "Fashion &amp; Beauty", "Food",
 #                     "Literature", "Performing Arts", "Visual Arts",
 #                     "Business", "Business News", "Careers", "Investing",
 #                     "Management &amp; Marketing", "Shopping", "Comedy",
