@@ -14,3 +14,4 @@ matplotlib
 psycopg2
 testing.postgresql
 nose
+flake8
