@@ -16,8 +16,8 @@ def serve_file(castname, epname):
     filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], safe_name)
     if os.path.isfile(filepath):
         if 'name' not in session:
-          epname_noext = epname.rsplit(".")[0]
-          stats_update_episode(epname_noext)
+            epname_noext = epname.rsplit(".")[0]
+            stats_update_episode(epname_noext)
         return send_file_206(filepath, safe_name)
     else:
       abort(404)
@@ -52,9 +52,9 @@ def send_file_206(path, safe_name):
         data = f.read(length)
 
     rv = Response(data,
-        206,
-        mimetype=mimetypes.guess_type(path)[0],
-        direct_passthrough=True)
+                  206,
+                  mimetype=mimetypes.guess_type(path)[0],
+                  direct_passthrough=True)
     rv.headers.add('Content-Range', 'bytes {0}-{1}/{2}'.format(byte1, byte1 + length - 1, size))
     return rv
 
@@ -98,13 +98,13 @@ def build_xml(meta, casts, name):
     cast_img = cast_img_list[len(cast_img_list)-1]
     #TODO: Editorship, TTL; SkipDays/Hours
     rss = ET.Element('rss',
-                        {
-                            'version':'2.0',
-                         },
-                         nsmap = {
-                             "atom" : "http://www.w3.org/2005/Atom",
-                             "itunes" : "http://www.itunes.com/dtds/podcast-1.0.dtd"
-                         }
+                     {
+                        'version':'2.0',
+                     },
+                     nsmap = {
+                                "atom" : "http://www.w3.org/2005/Atom",
+                                "itunes" : "http://www.itunes.com/dtds/podcast-1.0.dtd"
+                             }
                     )
     channel = ET.SubElement(rss, 'channel')
     podcast_title = ET.SubElement(channel, 'title')
