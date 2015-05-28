@@ -20,7 +20,7 @@ def serve_file(castname, epname):
             stats_update_episode(epname_noext)
         return send_file_206(filepath, safe_name)
     else:
-      abort(404)
+        abort(404)
 
 @serve.after_request
 def after_request(response):
@@ -99,11 +99,11 @@ def build_xml(meta, casts, name):
     #TODO: Editorship, TTL; SkipDays/Hours
     rss = ET.Element('rss',
                      {
-                        'version':'2.0',
+                         'version':'2.0',
                      },
                      nsmap = {
-                                "atom" : "http://www.w3.org/2005/Atom",
-                                "itunes" : "http://www.itunes.com/dtds/podcast-1.0.dtd"
+                                 "atom" : "http://www.w3.org/2005/Atom",
+                                 "itunes" : "http://www.itunes.com/dtds/podcast-1.0.dtd"
                              }
                     )
     channel = ET.SubElement(rss, 'channel')
