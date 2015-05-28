@@ -123,7 +123,7 @@ def shared_graphing(list_date, list_ip):
 @stats.route("/stats/graphs/<castname>", \
              defaults={'starttime': (datetime.datetime.now().date() +
                                      datetime.timedelta(days=1)) -
-                                     datetime.timedelta(days=7),
+                                    datetime.timedelta(days=7),
                        'endtime': datetime.datetime.now().date() +
                                   datetime.timedelta(days=1)})
 @stats.route("/stats/graphs/<castname>/<starttime>/<endtime>")
@@ -146,7 +146,7 @@ def graphs_cast(castname, starttime, endtime):
 @stats.route("/stats/graphs/<castname>/<epname>",
              defaults={'starttime': (datetime.datetime.now().date() +
                                      datetime.timedelta(days=1)) -
-                                     datetime.timedelta(days=7),
+                                    datetime.timedelta(days=7),
                        'endtime': datetime.datetime.now().date() +
                                   datetime.timedelta(days=1)})
 @stats.route("/stats/graphs/<castname>/<epname>/<starttime>/<endtime>")   
