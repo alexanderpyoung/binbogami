@@ -25,7 +25,7 @@ def stats_cast(castname):
                 xml_hits = g.db_cursor.fetchall()
             else:
                 xml_hits = []
-            return render_template("stats_podcast.html", podcast_name=castname, 
+            return render_template("stats_podcast.html", podcast_name=castname,
                                    xml_hits=xml_hits)
         else:
             return "Not your podcast, friend"
@@ -41,26 +41,26 @@ def stats_ep(castname, epname):
                                 title=%s and podcast=%s", [epname, auth_podcast[0]])
             auth_count = g.db_cursor.rowcount
             if auth_count is not 0:
-              auth_episode = g.db_cursor.fetchone()
-              g.db_cursor.execute("select * from stats_episodes where \
-                                  podcast=%s and podcast_episode=%s order by \
-                                  date desc",
-                                  [auth_podcast[0], auth_episode[0]])
-              ep_hits = g.db_cursor.fetchall()
-              return render_template("stats_episode.html", episode_name=epname,
-                                     ep_hits=ep_hits, podcast_name=castname)
+                auth_episode = g.db_cursor.fetchone()
+                g.db_cursor.execute("select * from stats_episodes where \
+                                    podcast=%s and podcast_episode=%s order by \
+                                    date desc",
+                                    [auth_podcast[0], auth_episode[0]])
+                ep_hits = g.db_cursor.fetchall()
+                return render_template("stats_episode.html", episode_name=epname,
+                                       ep_hits=ep_hits, podcast_name=castname)
             else:
-              return "Not your episode, friend."
+                return "Not your episode, friend."
         else:
             return "Not your podcast, friend."
     else:
         return redirect(url_for('log.login'))
 
 def generate_date(orig):
-      # convert the date to a "meaningful" level of granularity
-      dt_string = datetime.datetime.strftime(orig, "%d-%m-%y")
-      date_dt_sensible = datetime.datetime.strptime(dt_string, "%d-%m-%y").date()
-      return date_dt_sensible
+    # convert the date to a "meaningful" level of granularity
+    dt_string = datetime.datetime.strftime(orig, "%d-%m-%y")
+    date_dt_sensible = datetime.datetime.strptime(dt_string, "%d-%m-%y").date()
+    return date_dt_sensible
 
 def generate_feed_stats(feed_id, starttime, endtime, ep_id=None):
     # FIXME: there must be a less ugly way to do this
@@ -101,14 +101,14 @@ def shared_graphing(list_date, list_ip):
     rcParams['figure.figsize'] = 10, 5
     # plot a graph, if our list isn't empty
     if list_ip:
-        fig, ax = plt.subplots()
-        ax.xaxis.set_major_locator(mdates.DayLocator())
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%y'))
-        ax.yaxis.set_major_locator(ticker.MultipleLocator())
-        ax.set_ylim(0, max(list_ip)+1)
-        ax.format_xdata = mdates.DateFormatter('%d-%m-%y')
-        ax.bar(list_date, list_ip, width=1.0, facecolor='green', align='center')
-        ax.plot(list_date, list_ip, 'yo-')
+        fig, axes =  plt.subplots()
+        axes.xaxis.set_major_locator(mdates.DayLocator())
+        axes.xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%y'))
+        axes.yaxis.set_major_locator(ticker.MultipleLocator())
+        axes.set_ylim(0, max(list_ip)+1)
+        axes.format_xdata = mdates.DateFormatter('%d-%m-%y')
+        axes.bar(list_date, list_ip, width=1.0, facecolor='green', align='center')
+        axes.plot(list_date, list_ip, 'yo-')
         fig.autofmt_xdate()
     # otherwise, show an image of nothing
     else:
@@ -121,9 +121,9 @@ def shared_graphing(list_date, list_ip):
 
 # when we use SQLite 'between', it's an exclusive limit. Add a day.
 @stats.route("/stats/graphs/<castname>", \
-             defaults={'starttime': (datetime.datetime.now().date() + 
+             defaults={'starttime': (datetime.datetime.now().date()  
              datetime.timedelta(days=1)) - datetime.timedelta(days=7),
-             'endtime': datetime.datetime.now().date() + 
+             'endtime': datetime.datetime.now().date() +
              datetime.timedelta(days=1)})
 @stats.route("/stats/graphs/<castname>/<starttime>/<endtime>")
 def graphs_cast(castname, starttime, endtime):
@@ -135,7 +135,7 @@ def graphs_cast(castname, starttime, endtime):
             # build graph
             graph_img = shared_graphing(graph_stats[0], graph_stats[1])
             # create a Response object with the png body and headers
-            response = Response(graph_img,mimetype="image/png") 
+            response = Response(graph_img, mimetype="image/png")
             return response
         else:
             return abort(403)
