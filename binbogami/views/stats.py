@@ -101,7 +101,7 @@ def shared_graphing(list_date, list_ip):
     rcParams['figure.figsize'] = 10, 5
     # plot a graph, if our list isn't empty
     if list_ip:
-        fig, axes =  plt.subplots()
+        fig, axes = plt.subplots()
         axes.xaxis.set_major_locator(mdates.DayLocator())
         axes.xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%y'))
         axes.yaxis.set_major_locator(ticker.MultipleLocator())
@@ -122,9 +122,9 @@ def shared_graphing(list_date, list_ip):
 # when we use SQLite 'between', it's an exclusive limit. Add a day.
 @stats.route("/stats/graphs/<castname>", \
              defaults={'starttime': (datetime.datetime.now().date() +
-             datetime.timedelta(days=1)) - datetime.timedelta(days=7),
-             'endtime': datetime.datetime.now().date() +
-             datetime.timedelta(days=1)})
+                       datetime.timedelta(days=1)) - datetime.timedelta(days=7),
+                       'endtime': datetime.datetime.now().date() +
+                       datetime.timedelta(days=1)})
 @stats.route("/stats/graphs/<castname>/<starttime>/<endtime>")
 def graphs_cast(castname, starttime, endtime):
     if 'username' in session:
@@ -143,10 +143,10 @@ def graphs_cast(castname, starttime, endtime):
         return abort(403)
 
 @stats.route("/stats/graphs/<castname>/<epname>",
-    defaults={'starttime': (datetime.datetime.now().date() +
-              datetime.timedelta(days=1)) - datetime.timedelta(days=7),
-              'endtime': datetime.datetime.now().date() +
-              datetime.timedelta(days=1)})
+             defaults={'starttime': (datetime.datetime.now().date() +
+                       datetime.timedelta(days=1)) - datetime.timedelta(days=7),
+                       'endtime': datetime.datetime.now().date() +
+                       datetime.timedelta(days=1)})
 @stats.route("/stats/graphs/<castname>/<epname>/<starttime>/<endtime>")   
 def graphs_ep(castname,epname, starttime, endtime):
     if 'username' in session:
