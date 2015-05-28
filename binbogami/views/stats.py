@@ -121,7 +121,7 @@ def shared_graphing(list_date, list_ip):
 
 # when we use SQLite 'between', it's an exclusive limit. Add a day.
 @stats.route("/stats/graphs/<castname>", \
-             defaults={'starttime': (datetime.datetime.now().date()  
+             defaults={'starttime': (datetime.datetime.now().date() +
              datetime.timedelta(days=1)) - datetime.timedelta(days=7),
              'endtime': datetime.datetime.now().date() +
              datetime.timedelta(days=1)})
