@@ -51,7 +51,7 @@ def stats_ep(castname, epname):
                                      ep_hits=ep_hits, podcast_name=castname)
             else:
               return "Not your episode, friend."
-          else:
+        else:
             return "Not your podcast, friend."
     else:
         return redirect(url_for('log.login'))
@@ -67,13 +67,9 @@ def generate_feed_stats(feed_id, starttime, endtime, ep_id=None):
     # this doesn't provide an accurate time series, but matplotlib is fine with
     # this when datetime collections are passed
     if ep_id is None:
-      g.db_cursor.execute("select date, ip from stats_xml where \
-                          podcast=%s and date between %s and %s", \
-                          [feed_id, starttime, endtime])
-      if g.db_cursor.rowcount is not 0:
-          feed_stats = g.db_cursor.fetchall()
-      else:
-          feed_stats = []
+        g.db_cursor.execute("select date, ip from stats_xml where \
+                            podcast=%s and date between %s and %s", \
+                            [feed_id, starttime, endtime])
     else:
         g.db_cursor.execute("select date, ip from stats_episodes \
                             where podcast=%s and podcast_episode=%s \
