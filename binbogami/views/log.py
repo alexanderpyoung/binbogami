@@ -1,6 +1,6 @@
 from flask import g, session, render_template, Blueprint, request, redirect
 from flask import url_for
-from passlib.hash import bcrypt
+import passlib.hash
 
 log = Blueprint("log", __name__, template_folder="templates")
 
@@ -18,7 +18,7 @@ def login():
             return render_template("login.html", error=error)
         else:
             fetch = g.db_cursor.fetchone()
-            if bcrypt.verify(request.form["password"], fetch[3]):
+            if passlib.hash.bcrypt.verify(request.form["password"], fetch[3]):
                 create_session(fetch)
                 return redirect(url_for('admin.show_casts'))
             else:

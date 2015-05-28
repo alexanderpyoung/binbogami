@@ -1,7 +1,7 @@
 from flask import Blueprint, g, send_from_directory, current_app
 from flask import Markup, request, Response, abort, session
 from werkzeug.utils import secure_filename
-from lxml import etree as ET
+import lxml.etree as ET
 from datetime import datetime
 from urllib.parse import quote
 import os, mimetypes, re

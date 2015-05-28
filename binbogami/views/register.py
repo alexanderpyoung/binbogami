@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, g, request, redirect, url_for
 from binbogami.views.log import create_session
-from passlib.hash import bcrypt
 from re import match
+import passlib.hash
 
 register = Blueprint("register",__name__,
                         template_folder="templates")
@@ -44,7 +44,7 @@ def reg():
 
 def hash_password(password):
     pw2bytes = password.encode("utf-8")
-    hashed_password = bcrypt.encrypt(pw2bytes)
+    hashed_password = passlib.hash.bcrypt.encrypt(pw2bytes)
     return hashed_password
 
 def check_email(email):
