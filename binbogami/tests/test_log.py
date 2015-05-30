@@ -41,8 +41,20 @@ class TestLog(unittest.TestCase):
         """
         rv1 = self.login('admin', 'test')
         assert "List of podcasts for" in rv1.data.decode("utf-8")
-        rv2 = self.login('adin', "beep")
+
+    def test_login_incorrect_username(self):
+        """
+        Test login with an invalid username
+        """
+        rv2 = self.login('adin', "test")
         assert "Incorrect" in rv2.data.decode("utf-8")
+
+    def test_login_incorrect_password(self):
+        """
+        Test login with an incorrect password
+        """
+        rv1 = self.login('admin', 'uddin')
+        assert "Incorrect" in rv1.data.decode("utf-8")
 
     def testlogout(self):
         """

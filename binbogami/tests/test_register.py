@@ -22,6 +22,9 @@ class TestRegister(unittest.TestCase):
         TestBinbogami.tearDown(self)
 
     def register(self, username, password, name, email):
+        """
+        Helper method for registration.
+        """
         return self.app.post('/register', data={
             "username": username,
             "password": password,
