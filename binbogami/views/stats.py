@@ -1,4 +1,7 @@
-from flask import Blueprint, g, current_app, abort, session, redirect, url_for
+"""
+Module to handle binbogami stats.
+"""
+from flask import Blueprint, g, abort, session, redirect, url_for
 from flask import render_template
 from binbogami.views.admin import get_id
 from werkzeug import BaseResponse as Response
@@ -15,6 +18,9 @@ stats = Blueprint("stats", __name__, template_folder="templates")
 
 @stats.route("/stats/<castname>")
 def stats_cast(castname):
+    """
+    Function to handle displaying stats for a podcast.
+    """
     if 'username' in session:
         auth = get_id("id", castname, session['uid'])
         if auth is not None:
@@ -34,6 +40,9 @@ def stats_cast(castname):
 
 @stats.route("/stats/<castname>/<epname>")
 def stats_ep(castname, epname):
+    """
+    Function to handle displaying stats for a podcast episode
+    """
     if 'username' in session:
         auth_podcast = get_id("id", castname, session['uid'])
         if auth_podcast is not None:
@@ -57,12 +66,18 @@ def stats_ep(castname, epname):
         return redirect(url_for('log.login'))
 
 def generate_date(orig):
+    """
+    Function to convert datetimes from database to dates for the graphs
+    """
     # convert the date to a "meaningful" level of granularity
     dt_string = datetime.datetime.strftime(orig, "%d-%m-%y")
     date_dt_sensible = datetime.datetime.strptime(dt_string, "%d-%m-%y").date()
     return date_dt_sensible
 
 def generate_feed_stats(feed_id, starttime, endtime, ep_id=None):
+    """
+    Function to generate a tuple of lists for dates and IPs
+    """
     # FIXME: there must be a less ugly way to do this
     # this doesn't provide an accurate time series, but matplotlib is fine with
     # this when datetime collections are passed
@@ -97,6 +112,9 @@ def generate_feed_stats(feed_id, starttime, endtime, ep_id=None):
     return (feed_dateset, feed_ip_return)
 
 def shared_graphing(list_date, list_ip):
+    """
+    graphing function using matplotlib
+    """
     # set image size
     rcParams['figure.figsize'] = 10, 5
     # plot a graph, if our list isn't empty
@@ -128,6 +146,9 @@ def shared_graphing(list_date, list_ip):
                                   datetime.timedelta(days=1)})
 @stats.route("/stats/graphs/<castname>/<starttime>/<endtime>")
 def graphs_cast(castname, starttime, endtime):
+    """
+    Function to display graphs for a podcast
+    """
     if 'username' in session:
         authpodcast = get_id("id", castname, session['uid'])
         if authpodcast is not None:
@@ -149,14 +170,17 @@ def graphs_cast(castname, starttime, endtime):
                                     datetime.timedelta(days=7),
                        'endtime': datetime.datetime.now().date() +
                                   datetime.timedelta(days=1)})
-@stats.route("/stats/graphs/<castname>/<epname>/<starttime>/<endtime>")   
-def graphs_ep(castname,epname, starttime, endtime):
+@stats.route("/stats/graphs/<castname>/<epname>/<starttime>/<endtime>")
+def graphs_ep(castname, epname, starttime, endtime):
+    """
+    Function to display graphs for a podcast episode.
+    """
     if 'username' in session:
         authpodcast = get_id("id", castname, session['uid'])
         if authpodcast is not None:
             g.db_cursor.execute("select id from podcasts_casts where \
-                                podcast=%s and title=%s", [authpodcast[0],
-                                epname])
+                                 podcast=%s and title=%s", [authpodcast[0],
+                                                            epname])
             authepisode_rows = g.db_cursor.rowcount
             if authepisode_rows is not 0:
                 authepisode = g.db_cursor.fetchone()

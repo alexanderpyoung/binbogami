@@ -1,3 +1,6 @@
+"""
+Module for the admin functions of binbogami
+"""
 import os, shutil
 from re import match
 from flask import Blueprint, g, session, render_template, abort, request, redirect
@@ -42,9 +45,12 @@ itunes_categories = [
 
 @admin.route("/admin")
 def show_casts():
+    """
+    Function for core admin page - display user's podcast
+    """
     if 'username' in session:
-        g.db_cursor.execute("select name, description, url, image, id from podcasts_header where owner=%s",
-                                    [session['uid']])
+        g.db_cursor.execute("select name, description, url, image, id from \
+                             podcasts_header where owner=%s", [session['uid']])
         rows = g.db_cursor.rowcount
         cast_list = None
         if rows is not 0:
@@ -55,30 +61,35 @@ def show_casts():
                 imgurl = imgurlsplit[len(imgurlsplit)-1]
                 cast_list.append((items[0], items[1], items[2], imgurl))
         return render_template("podcast_admin.html", list=cast_list,
-                                nocast="No casts.", friendly_name=session['name'])
+                               nocast="No casts.", friendly_name=session['name'])
     else:
-        #TODO: implement this in a prettier manner.
         abort(401)
 
 @admin.route("/admin/<castname>")
 def show_eps(castname):
+    """
+    Function to show episodes within a podcast
+    """
     if 'username' in session:
         podcastid = get_id("id, name", castname, session['uid'])
         if podcastid != None:
             g.db_cursor.execute(
-                "select title, description, castfile, filetype from podcasts_casts where podcast=%s order by date desc",
+                "select title, description, castfile, filetype from \
+                podcasts_casts where podcast=%s order by date desc",
                 [podcastid[0]]
             )
             eps = g.db_cursor.rowcount
             list_template = []
             if eps is not 0:
                 eps_list = g.db_cursor.fetchall()
-                for ep in eps_list:
+                for episode in eps_list:
                     cast_url = url_for("serve.serve_file", castname=podcastid[1],
-                                        epname=ep[0]) + "." + ep[3]
-                    list_template.append((ep[0], ep[1], cast_url))
+                                       epname=episode[0]) + "." + episode[3]
+                    list_template.append((episode[0], episode[1], cast_url))
             return render_template(
-                "ep_admin.html", podcastid=podcastid, list=list_template, noep="No episodes.", castname=castname
+                "ep_admin.html", podcastid=podcastid,
+                list=list_template, noep="No episodes.",
+                castname=castname
             )
         else:
             return "You don't own this podcast."
@@ -87,6 +98,9 @@ def show_eps(castname):
 
 @admin.route("/admin/new/cast", methods=['POST', 'GET'])
 def new_cast():
+    """
+    Function to handle new podcast creation.
+    """
     if 'username' in session:
         if request.method == "GET":
             return render_template("podcasts_new.html", itunes_categories=itunes_categories)
@@ -94,19 +108,21 @@ def new_cast():
             # only one podcast for each name on the server; owner doesn't matter
             g.db_cursor.execute("select name from podcasts_header where name=%s",
                                 [request.form['castname']]
-            )
+                               )
             result = g.db_cursor.rowcount
             if result is 0:
                 if "/" in request.form['castname']:
-                    return render_template("podcasts_new.html", 
-                        error="No forward slashes permitted in podcast name.",
-                        itunes_categories=itunes_categories)
+                    return render_template("podcasts_new.html",
+                                           error="No forward slashes permitted \
+                                                 in podcast name.",
+                                           itunes_categories=itunes_categories)
                 if validate_url(request.form['url']) == 1:
-                           return render_template("podcasts_new.html", 
-                        error="You did not supply a valid URL.",
-                        itunes_categories=itunes_categories)
+                    return render_template("podcasts_new.html",
+                                           error="You did not supply a valid URL.",
+                                           itunes_categories=itunes_categories)
                 if request.form['castname'].strip() == "":
-                    return render_template("podcasts_new.html", error="You did not supply a valid cast name.",
+                    return render_template("podcasts_new.html", error="You did \
+                                           not supply a valid cast name.",
                                            itunes_categories=itunes_categories)
                 img = request.files['img']
                 if len(img.filename) != 0:
@@ -119,21 +135,26 @@ def new_cast():
                         error = "Your image must be a JPEG, GIF or PNG."
                 else:
                     error = "You did not select an image to upload."
-                return render_template("podcasts_new.html", error=error, itunes_categories=itunes_categories)
+                return render_template("podcasts_new.html", error=error,
+                                       itunes_categories=itunes_categories)
             else:
                 error = "You already have a podcast by that name."
-                return render_template("podcasts_new.html", error=error, itunes_categories=itunes_categories)
+                return render_template("podcasts_new.html", error=error,
+                                       itunes_categories=itunes_categories)
     else:
-        #TODO: implement this in a prettier manner.
         abort(401)
 
 @admin.route("/admin/edit/<castname>", methods=['GET', 'POST'])
 def edit_cast(castname):
+    """
+    Function for editing podcasts
+    """
     if 'username' in session:
         podcastid = get_id("id, name, image, explicit", castname, session['uid'])
         if request.method == "GET":
             if podcastid != None:
-                cast_details = get_id("id, owner, name, description, url, image, categories, explicit", castname, session['uid'])
+                cast_details = get_id("id, owner, name, description, url, image, \
+                                      categories, explicit", castname, session['uid'])
                 cast_img_list = cast_details[5].rsplit("/")
                 cast_img = cast_img_list[len(cast_img_list)-1]
                 cast_img_url = request.url_root + "image/" + cast_img
@@ -145,25 +166,27 @@ def edit_cast(castname):
                 abort(401)
         elif request.method == "POST":
             if podcastid != None:
-                cast_details = get_id("id, owner, name, description, url, image, categories, explicit", castname, session['uid'])
+                cast_details = get_id("id, owner, name, description, url, image, \
+                                      categories, explicit", castname, session['uid'])
                 cast_img_list = cast_details[5].rsplit("/")
                 cast_img = cast_img_list[len(cast_img_list)-1]
                 cast_img_url = request.url_root + "image/" + cast_img
                 if "/" in request.form['castname']:
-                    return render_template("podcasts_edit.html", 
-                        error="No forward slashes permitted in podcast name.",
-                        itunes_categories=itunes_categories, 
-                        cast_details=cast_details,
-                        cast_img_url=cast_img_url)
+                    return render_template("podcasts_edit.html",
+                                           error="No forward slashes permitted in podcast name.",
+                                           itunes_categories=itunes_categories,
+                                           cast_details=cast_details,
+                                           cast_img_url=cast_img_url)
                 if request.form['castname'].strip() == "":
-                    return render_template("podcasts_edit.html", error="You did not supply a valid cast name.",
-                                    itunes_categories=itunes_categories, cast_details=cast_details,
-                                    cast_img_url=cast_img_url)
+                    return render_template("podcasts_edit.html", error="You did not supply \
+                                           a valid cast name.", itunes_categories=itunes_categories,
+                                           cast_details=cast_details, cast_img_url=cast_img_url)
                 if validate_url(request.form['url']) == 1:
-                    return render_template("podcasts_edit.html", error="You did not supply a valid URL.",
-                                            itunes_categories=itunes_categories,
-                                            cast_details=cast_details,
-                                            cast_img_url=cast_img_url)
+                    return render_template("podcasts_edit.html",
+                                           error="You did not supply a valid URL.",
+                                           itunes_categories=itunes_categories,
+                                           cast_details=cast_details,
+                                           cast_img_url=cast_img_url)
                 if request.form['castname'] != podcastid[1]:
                     g.db_cursor.execute(
                         "select id, title, castfile, filetype from podcasts_casts where podcast=%s",
@@ -177,13 +200,16 @@ def edit_cast(castname):
                             secure_podcast_name = secure_filename(request.form['castname'])
                             secure_ep_name = secure_filename(episode[1])
                             secure_file_ext = secure_filename(episode[3])
-                            new_filename = secure_podcast_name + "/" + secure_ep_name + "." + secure_file_ext
+                            new_filename = secure_podcast_name + "/" + secure_ep_name \
+                                           + "." + secure_file_ext
                             filepath = os.path.join(
                                 current_app.config['UPLOAD_FOLDER'],
                                 new_filename
                             )
-                            if not os.path.isdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name)):
-                                os.mkdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name))
+                            if not os.path.isdir(os.path.join(current_app.config["UPLOAD_FOLDER"],
+                                                              secure_podcast_name)):
+                                os.mkdir(os.path.join(current_app.config["UPLOAD_FOLDER"],
+                                                      secure_podcast_name))
                                 new_folder = True
                             os.rename(episode[2], filepath)
                             g.db_cursor.execute(
@@ -192,7 +218,8 @@ def edit_cast(castname):
                             )
                             g.db.commit()
                         if new_folder == True:
-                            os.rmdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_filename(cast_details[2])))
+                            os.rmdir(os.path.join(current_app.config["UPLOAD_FOLDER"],
+                                                  secure_filename(cast_details[2])))
                 img = request.files['img']
                 if len(img.filename) != 0:
                     img_upload = image_upload(img, podcastid, "edit")
@@ -204,9 +231,12 @@ def edit_cast(castname):
                         return "Image incorrect format."
                 else:
                     g.db_cursor.execute(
-                        "update podcasts_header set name=%s, description=%s, url=%s, categories=%s, explicit=%s where id=%s",
-                        [request.form['castname'], Markup(request.form['description']).striptags(),
-                        request.form['url'], request.form['category'], request.form['explicit'], podcastid[0]]
+                        "update podcasts_header set name=%s, description=%s, \
+                        url=%s, categories=%s, explicit=%s where id=%s",
+                        [request.form['castname'],
+                         Markup(request.form['description']).striptags(),
+                         request.form['url'], request.form['category'],
+                         request.form['explicit'], podcastid[0]]
                     )
                     g.db.commit()
                     return redirect(url_for('admin.show_casts'))
@@ -219,6 +249,9 @@ def edit_cast(castname):
 
 @admin.route("/admin/delete/<castname>")
 def delete_cast(castname):
+    """
+    Delete cast function.
+    """
     if 'username' in session:
         # 1) Does the podcast exist? 2) Does it belong to the logged in user?
         podcastid = get_id("id", castname, session['uid'])
@@ -260,11 +293,13 @@ def delete_cast(castname):
         else:
             return "Sorry, the podcast you are attempting to delete does not exist."
     else:
-        #TODO: implement this in a prettier manner
         abort(401)
 
 @admin.route("/admin/<castname>/new", methods=['POST', 'GET'])
 def new_ep(castname):
+    """
+    Function to create new podcast episodes
+    """
     if 'username' in session:
         podcastid = get_id("id, name, owner", castname, session['uid'])
         if request.method == "GET":
@@ -275,10 +310,11 @@ def new_ep(castname):
         elif request.method == "POST":
             if podcastid != None:
                 if request.form['epname'].strip() == "":
-                    return render_template("ep_new.html", podcastid=podcastid, error="You did not specify a valid podcast name.")
+                    return render_template("ep_new.html", podcastid=podcastid,
+                                           error="You did not specify a valid podcast name.")
                 if "/" in request.form['epname']:
                     return render_template("ep_new.html", podcastid=podcastid,
-                        error="No forward slashes permitted in epsiode name.")
+                                           error="No forward slashes permitted in epsiode name.")
                 ep = request.form["file-upload"]
                 g.db_cursor.execute(
                     "select title from podcasts_casts where title=%s and podcast=%s",
@@ -287,7 +323,8 @@ def new_ep(castname):
                 result = g.db_cursor.rowcount
                 if ep and result is 0 and len(ep) != 0:
                     cast_upload(
-                        secure_filename(ep), podcastid, request.form["epname"], request.form['description'], "new"
+                        secure_filename(ep), podcastid, request.form["epname"],
+                        request.form['description'], "new"
                     )
                     return redirect(url_for('admin.show_eps', castname=castname))
                 else:
@@ -298,19 +335,25 @@ def new_ep(castname):
         abort(401)
 
 def allowed_file(filename):
+    """
+    Function to check whether files are of the extensions we like.
+    """
     return '.' in filename and \
         filename.rsplit('.', 1)[1] in ["mp3", "ogg", "opus", "spx"]
 
 def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
+    """
+    Function to handle podcast episode upload
+    """
     file_ext = ep_file.rsplit('.', 1)[1]
     secure_podcast_name = secure_filename(podcast[1])
     secure_ep_name = secure_filename(ep_name)
     secure_file_ext = secure_filename(file_ext)
     new_filename = secure_podcast_name + "/" + secure_ep_name + "." + secure_file_ext
     filepath = os.path.join(
-                current_app.config["UPLOAD_FOLDER"],
-                new_filename
-                )
+        current_app.config["UPLOAD_FOLDER"],
+        new_filename
+        )
     if not os.path.isdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name)):
         os.mkdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name))
     try:
@@ -330,7 +373,8 @@ def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
 
     if neworedit == "new":
         g.db_cursor.execute(
-            "insert into podcasts_casts (podcast, title, description, castfile, date, length, filetype) values (%s,%s,%s,%s, now(),%s,%s)",
+            "insert into podcasts_casts (podcast, title, description, castfile, \
+            date, length, filetype) values (%s,%s,%s,%s, now(),%s,%s)",
             [
                 podcast[0], ep_name.strip(),
                 ep_description, filepath,
@@ -345,21 +389,24 @@ def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
         g.db.commit()
 
 def image_upload(img, meta_array, neworedit):
-    PIL_img = Image.open(img)
+    """
+    Function to handle image uploads and handle DB operations for podcasts.
+    """
+    pil_img = Image.open(img)
     if img.filename.rsplit(".", 1)[1] in ["jpg", "jpeg", "gif", "png"]:
-        if PIL_img.size[0] == 1400 and PIL_img.size[1] == 1400:
+        if pil_img.size[0] == 1400 and pil_img.size[1] == 1400:
             filename = request.form['castname'] + "." + \
                 img.filename.rsplit(".", 1)[1]
             safe_filename = secure_filename(filename)
             imgpath = os.path.join(
-                    current_app.config["UPLOAD_FOLDER"],
-                    safe_filename
+                current_app.config["UPLOAD_FOLDER"],
+                safe_filename
             )
-            # opening the request.files object (Werkzeug FileStorage) with PIL
+            # opening the request.files object (Werkzeug FileStorage) with pil
             # does "something" to it - won't save from that function. Works
-            # with PIL, though.
+            # with pil, though.
             try:
-                PIL_img.save(imgpath)
+                pil_img.save(imgpath)
             except:
                 return 3
             if neworedit == "edit":
@@ -368,17 +415,19 @@ def image_upload(img, meta_array, neworedit):
                 except FileNotFoundError:
                     pass
                 g.db_cursor.execute(
-                    "update podcasts_header set name=%s, description=%s, url=%s, image=%s, categories=%s where id=%s",
+                    "update podcasts_header set name=%s, description=%s, \
+                     url=%s, image=%s, categories=%s where id=%s",
                     [request.form['castname'].strip(), request.form['description'],
-                    request.form['url'], imgpath, request.form['category'], meta_array[0]]
+                     request.form['url'], imgpath, request.form['category'], meta_array[0]]
                 )
                 g.db.commit()
             elif neworedit == "new":
                 g.db_cursor.execute(
-                    "insert into podcasts_header (owner, name, description, url, image, categories, explicit) values (%s,%s,%s, %s,%s,%s,%s)",
-                    [session['uid'],request.form['castname'].strip(),
-                    Markup(request.form['description']).striptags(), request.form['url'],
-                    imgpath, request.form['category'], request.form['explicit']]
+                    "insert into podcasts_header (owner, name, description, url, \
+                            image, categories, explicit) values (%s,%s,%s, %s,%s,%s,%s)",
+                    [session['uid'], request.form['castname'].strip(),
+                     Markup(request.form['description']).striptags(), request.form['url'],
+                     imgpath, request.form['category'], request.form['explicit']]
                 )
                 g.db.commit()
             else:
@@ -390,11 +439,15 @@ def image_upload(img, meta_array, neworedit):
         return 2
 
 @admin.route("/admin/edit/<castname>/<epname>", methods=["POST", "GET"])
-def edit_ep(castname,epname):
+def edit_ep(castname, epname):
+    """
+    Function to edit podcast episodes.
+    """
     if 'username' in session:
         podcastid = get_id("id, name, owner", castname, session['uid'])
         g.db_cursor.execute(
-            "select id, podcast, title, description, castfile, filetype from podcasts_casts where title=%s",
+            "select id, podcast, title, description, castfile, filetype from podcasts_casts \
+            where title=%s",
             [epname]
         )
         cast_rows = g.db_cursor.rowcount
@@ -409,11 +462,13 @@ def edit_ep(castname,epname):
             if podcastid != None:
                 if request.form['epname'].strip() == "":
                     return render_template("ep_edit.html", podcastid=podcastid,
-                                            error="You did not specify a valid podcast name.", cast=cast)
+                                           error="You did not specify a valid podcast name.",
+                                           cast=cast)
                 if "/" in request.form['epname']:
                     return render_template("ep_edit.html", podcastid=podcastid,
-                        error="No forward slashes permitted in epsiode name.", cast=cast)
-                ep = request.form['file-upload']
+                                           error="No forward slashes permitted in epsiode name.",
+                                           cast=cast)
+                episode_file = request.form['file-upload']
                 g.db_cursor.execute(
                     "select id from podcasts_casts where title=%s",
                     [request.form['epname']]
@@ -421,7 +476,7 @@ def edit_ep(castname,epname):
                 cast_name_check = g.db_cursor.rowcount
                 if cast_name_check is 0 or (cast_name_check is not 0 \
                 and request.form['epname'] == cast[2]):
-                    if len(ep) == 0:
+                    if len(episode_file) == 0:
                         secure_cast_name = secure_filename(castname)
                         secure_episode_name = secure_filename(request.form['epname'])
                         secure_file_ext = secure_filename(cast[5])
@@ -442,7 +497,8 @@ def edit_ep(castname,epname):
                             os.remove(cast[4])
                         except FileNotFoundError:
                             pass
-                        cast_upload(secure_filename(ep), podcastid, request.form['epname'], request.form['description'], "edit")
+                        cast_upload(secure_filename(episode_file), podcastid,
+                                    request.form['epname'], request.form['description'], "edit")
                     g.db_cursor.execute(
                         "update podcasts_casts set title=%s, description=%s where id=%s",
                         [request.form['epname'].strip(), request.form['description'], cast[0]]
@@ -456,6 +512,9 @@ def edit_ep(castname,epname):
 
 @admin.route("/admin/delete/<castname>/<epname>")
 def delete_ep(castname, epname):
+    """
+    Function to delete podcast episodes.
+    """
     if 'username' in session:
         # 1) Does the episode exist? 2) Does it belong to the logged in user?
         podcastid = get_id("id", castname, session['uid'])
@@ -464,12 +523,12 @@ def delete_ep(castname, epname):
             [podcastid[0], epname]
         )
         ep_count = g.db_cursor.rowcount
-        if podcastid != None and episode is not 0:
+        if podcastid != None and ep_count is not 0:
             episode = g.db_cursor.fetchall()
             # Get and delete file
-            for ep in episode:
+            for ep_found in episode:
                 try:
-                    os.remove(ep[0])
+                    os.remove(ep_found[0])
                 except FileNotFoundError:
                     pass
             #Do the associated database operations
@@ -482,10 +541,12 @@ def delete_ep(castname, epname):
         else:
             return "Sorry, the podcast you are attempting to delete does not exist."
     else:
-        #TODO: implement this in a prettier manner
         abort(401)
 
 def get_id(query, castname, owner):
+    """
+    Database operations helper function.
+    """
     g.db_cursor.execute(
         "select " + query +" from podcasts_header where name=%s and owner=%s",
         [castname, owner]
@@ -498,6 +559,9 @@ def get_id(query, castname, owner):
         return None
 
 def validate_url(url):
+    """
+    URL validation helper function.
+    """
     regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
     is_it_a_url = match(regex, url)
     if is_it_a_url == None:
@@ -507,6 +571,9 @@ def validate_url(url):
 
 @admin.route("/admin/user", methods=["GET", "POST"])
 def user_admin():
+    """
+    Function for user administration.
+    """
     #FIXME: As it is, we could register with one email address then change it
     #       to an existing registration, don't think I care enough to fix.
     if 'username' in session:
@@ -528,18 +595,20 @@ def user_admin():
                     g.db_cursor.execute(
                         "update users set username=%s, name=%s, email=%s where id=%s",
                         [request.form['username'], request.form['name'],
-                        request.form['email'], session['uid']]
+                         request.form['email'], session['uid']]
                     )
                 else:
                     if request.form['password'] == request.form['passwordconf']:
-                      password = hash_password(request.form['password'])
-                      g.db_cursor.execute(
-                          "update users set username=%s, name=%s, pwhash=%s, email=%s where id=%s",
-                          [request.form['username'], request.form['name'], password,
-                          request.form['email'], session['uid']]
-                      )
+                        password = hash_password(request.form['password'])
+                        g.db_cursor.execute(
+                            "update users set username=%s, name=%s, pwhash=%s, \
+                            email=%s where id=%s",
+                            [request.form['username'], request.form['name'], password,
+                             request.form['email'], session['uid']]
+                        )
                     else:
-                        return render_template("user_admin.html", error="Passwords did not match", user=user)
+                        return render_template("user_admin.html",
+                                               error="Passwords did not match", user=user)
                 g.db.commit()
             else:
                 error = "Not a valid email address."

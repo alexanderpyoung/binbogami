@@ -1,3 +1,4 @@
+"""Module to handle serving XML, images, media"""
 from flask import Blueprint, g, send_from_directory, current_app
 from flask import Markup, request, Response, abort, session
 from werkzeug.utils import secure_filename
@@ -10,6 +11,9 @@ serve = Blueprint("serve", __name__, template_folder="templates")
 
 @serve.route("/<castname>/<epname>")
 def serve_file(castname, epname):
+    """
+    Serves podcast media, takes castname and epname as arguments.
+    """
     safe_podcast_name = secure_filename(castname)
     safe_episode_name = secure_filename(epname)
     safe_name = safe_podcast_name + "/" + safe_episode_name
@@ -24,11 +28,17 @@ def serve_file(castname, epname):
 
 @serve.after_request
 def after_request(response):
+    """
+    Adds range header to all served requests.
+    """
     response.headers.add('Accept-Ranges', 'bytes')
     return response
 
 
 def send_file_206(path, safe_name):
+    """
+    Handling for partial downloads of media files (Safari's streaming, iOS)
+    """
     range_header = request.headers.get('Range', None)
     if not range_header:
         return send_from_directory(current_app.config["UPLOAD_FOLDER"], safe_name)
@@ -36,36 +46,45 @@ def send_file_206(path, safe_name):
     size = os.path.getsize(path)
     byte1, byte2 = 0, None
 
-    m = re.search('(\d+)-(\d*)', range_header)
-    g = m.groups()
+    match = re.search('(\d+)-(\d*)', range_header)
+    group = match.groups()
 
-    if g[0]: byte1 = int(g[0])
-    if g[1]: byte2 = int(g[1])
+    if group[0]:
+        byte1 = int(group[0])
+    if group[1]:
+        byte2 = int(group[1])
 
     length = size - byte1
     if byte2 is not None:
         length = byte2 - byte1 + 1
 
     data = None
-    with open(path, 'rb') as f:
-        f.seek(byte1)
-        data = f.read(length)
+    with open(path, 'rb') as media_file:
+        media_file.seek(byte1)
+        data = media_file.read(length)
 
-    rv = Response(data,
-                  206,
-                  mimetype=mimetypes.guess_type(path)[0],
-                  direct_passthrough=True)
-    rv.headers.add('Content-Range', 'bytes {0}-{1}/{2}'.format(byte1, byte1 + length - 1, size))
-    return rv
+    response_value = Response(data,
+                              206,
+                              mimetype=mimetypes.guess_type(path)[0],
+                              direct_passthrough=True)
+    response_value.headers.add('Content-Range',
+                               'bytes {0}-{1}/{2}'.format(byte1, byte1 + length - 1, size))
+    return response_value
 
 @serve.route("/image/<img_name>")
 def serve_image(img_name):
+    """
+    Function to serve images
+    """
     img_send = img_name.replace(" ", "_")
     return send_from_directory(current_app.config['UPLOAD_FOLDER'],
-                                secure_filename(img_send))
+                               secure_filename(img_send))
 
 @serve.route("/<castname>/feed")
 def serve_xml(castname):
+    """
+    A function to fetch podcast episode data, before passing it to build_xml()
+    """
     g.db_cursor.execute(
         "select * from podcasts_header where name=%s",
         [castname]
@@ -92,6 +111,9 @@ def serve_xml(castname):
         return "No such cast."
 
 def build_xml(meta, casts, name):
+    """
+    A function to generate podcast XML
+    """
     #General XML structure
     encoded_feed_url = request.url_root + quote(meta[2]) + "/feed"
     cast_img_list = meta[5].rsplit("/")
@@ -101,21 +123,21 @@ def build_xml(meta, casts, name):
                      {
                          'version':'2.0',
                      },
-                     nsmap = {
-                                 "atom" : "http://www.w3.org/2005/Atom",
-                                 "itunes" : "http://www.itunes.com/dtds/podcast-1.0.dtd"
-                             }
+                     {
+                         "atom" : "http://www.w3.org/2005/Atom",
+                         "itunes" : "http://www.itunes.com/dtds/podcast-1.0.dtd"
+                     }
                     )
     channel = ET.SubElement(rss, 'channel')
     podcast_title = ET.SubElement(channel, 'title')
     podcast_description = ET.SubElement(channel, 'description')
     podcast_link = ET.SubElement(channel, 'link')
-    podcast_atom_link = ET.SubElement(channel, '{http://www.w3.org/2005/Atom}link',
-                            {
-                                'rel' : 'self',
-                                'href' : encoded_feed_url
-                            }
-                        )
+    ET.SubElement(channel, '{http://www.w3.org/2005/Atom}link',
+                  {
+                      'rel' : 'self',
+                      'href' : encoded_feed_url
+                  }
+                 )
     podcast_image = ET.SubElement(channel, 'image')
     podcast_image_url = ET.SubElement(podcast_image, 'url')
     podcast_image_link = ET.SubElement(podcast_image, 'link')
@@ -138,11 +160,16 @@ def build_xml(meta, casts, name):
     podcast_generator.text = "Binbogami"
 
     #iTunes tags
-    podcast_itunes_explicit = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}explicit')
-    podcast_itunes_author = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}author')
-    podcast_itunes_subtitle = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}subtitle')
-    podcast_itunes_category = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}category')
-    podcast_itunes_image = ET.SubElement(channel, '{http://www.itunes.com/dtds/podcast-1.0.dtd}image')
+    podcast_itunes_explicit = ET.SubElement(channel,
+                                            '{http://www.itunes.com/dtds/podcast-1.0.dtd}explicit')
+    podcast_itunes_author = ET.SubElement(channel,
+                                          '{http://www.itunes.com/dtds/podcast-1.0.dtd}author')
+    podcast_itunes_subtitle = ET.SubElement(channel,
+                                            '{http://www.itunes.com/dtds/podcast-1.0.dtd}subtitle')
+    podcast_itunes_category = ET.SubElement(channel,
+                                            '{http://www.itunes.com/dtds/podcast-1.0.dtd}category')
+    podcast_itunes_image = ET.SubElement(channel,
+                                         '{http://www.itunes.com/dtds/podcast-1.0.dtd}image')
 
     #iTunes population
     podcast_itunes_author.text = name[0]
@@ -151,10 +178,11 @@ def build_xml(meta, casts, name):
     podcast_itunes_image.text = request.url_root + "image/" + cast_img
     podcast_itunes_explicit.text = meta[7]
 
-    #now for the items for each podcast. Thankfully fucking iterable.
+    #now for the items for each podcast.
     for cast in casts:
         #Some variable-setting
-        encoded_url = request.url_root + quote(meta[2]) + "/" + quote(cast[2]) + "." + quote(cast[7])
+        encoded_url = request.url_root + quote(meta[2]) + "/" + \
+                      quote(cast[2]) + "." + quote(cast[7])
         if cast[7] == "mp3":
             mime_type = "audio/mpeg"
         else:
@@ -164,17 +192,17 @@ def build_xml(meta, casts, name):
         cast_title = ET.SubElement(cast_item, 'title')
         cast_description = ET.SubElement(cast_item, 'description')
         cast_date = ET.SubElement(cast_item, 'pubDate')
-        cast_enclosure = ET.SubElement(cast_item, 'enclosure',
-                            {
-                                'url': encoded_url,
-                                'type': mime_type
-                            }
-                        )
+        ET.SubElement(cast_item, 'enclosure',
+                      {
+                          'url': encoded_url,
+                          'type': mime_type
+                      }
+                     )
         cast_guid = ET.SubElement(cast_item, 'guid',
-                        {
-                            'isPermaLink':"true"
-                        }
-                    )
+                                  {
+                                      'isPermaLink':"true"
+                                  }
+                                 )
 
         #Content
         cast_title.text = cast[2]
@@ -188,27 +216,35 @@ def build_xml(meta, casts, name):
     return Markup(doctype + body)
 
 def stats_update_xml(cast):
+    """
+    A function to update the stats each time the XML is served.
+    """
     #we pass the integer id in here as we've already done the query for XML serving
     referrer = request.referrer
-    ip = request.remote_addr
+    access_ip = request.remote_addr
     date = str(datetime.now())
-    g.db_cursor.execute("insert into stats_xml (podcast, date, ip, referrer) values (%s, %s, %s, %s)",
-        [cast, date, ip, referrer])
+    g.db_cursor.execute("insert into stats_xml (podcast, date, ip, referrer) values \
+                        (%s, %s, %s, %s)", [cast, date, access_ip, referrer])
     g.db.commit()
 
 def stats_update_episode(episode):
+    """
+    A function to update stats when a file is served, IF the user is not logged in.
+    """
     referrer = request.referrer
-    ip = request.remote_addr
+    access_ip = request.remote_addr
     date = str(datetime.now())
     # otherwise we get multiple entries from 206es
     # this is based on Firefox's behaviour - Safari probably does something awful
     if referrer is None or episode not in referrer:
         g.db_cursor.execute("select id, podcast from podcasts_casts where title = %s",
-            [episode])
+                            [episode])
         db_cursor_ids = g.db_cursor.fetchone()
         episode_id = db_cursor_ids[0]
         podcast_id = db_cursor_ids[1]
-        g.db_cursor.execute("insert into stats_episodes (podcast, podcast_episode, date, ip, referrer) \
-            values (%s, %s, %s, %s, %s)", [podcast_id, episode_id, date, ip, referrer])
+        g.db_cursor.execute("insert into stats_episodes (podcast, \
+                            podcast_episode, date, ip, referrer) values \
+                            (%s, %s, %s, %s, %s)", [podcast_id, episode_id,
+                                                    date, access_ip, referrer])
         g.db.commit()
 

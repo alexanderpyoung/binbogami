@@ -1,13 +1,16 @@
+"""
+Helper class for binbogami tests
+"""
 import unittest
-import tempfile
-import os
 from passlib.hash import bcrypt
 import testing.postgresql
-import sys
 import psycopg2
 import binbogami
 
 class TestBinbogami(unittest.TestCase):
+    """
+    helper class for tests
+    """
     def setUp(self):
         self.db_entity = testing.postgresql.Postgresql()
         binbogami.bbgapp.config['DATABASE'] = "host=" + self.db_entity.dsn()['host'] + " port=" \
@@ -19,13 +22,17 @@ class TestBinbogami(unittest.TestCase):
         self.populate_db()
 
     def populate_db(self):
-        # if we're actually changing the database outside of the application context, we need to manually set up the db
-        # connection.
+        """
+        Put some stuff in the DB to test against
+        """
+        # if we're actually changing the database outside of the application context,
+        # we need to manually set up the db connection.
         pwbytes = 'test'
         hashedpw = bcrypt.encrypt(pwbytes)
         db = psycopg2.connect(**self.db_entity.dsn())
-        db.cursor().execute('insert into users (username, name, pwhash, email) values (%s, %s, %s, %s)',
-                                    ['admin', 'admin', hashedpw, 'test@email.com'])
+        db.cursor().execute('insert into users (username, name, pwhash, email) \
+                            values (%s, %s, %s, %s)',
+                            ['admin', 'admin', hashedpw, 'test@email.com'])
         db.commit()
 
     def tearDown(self):
@@ -33,3 +40,4 @@ class TestBinbogami(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
