@@ -196,6 +196,12 @@ def edit_cast(castname):
                     if episode_count is not 0:
                         episodes = g.db_cursor.fetchall()
                         new_folder = False
+                        secure_podcast_name = secure_filename(request.form['castname'])
+                        if not os.path.isdir(os.path.join(current_app.config["UPLOAD_FOLDER"],
+                                                          secure_podcast_name)):
+                            os.mkdir(os.path.join(current_app.config["UPLOAD_FOLDER"],
+                                                  secure_podcast_name))
+                            new_folder = True
                         for episode in episodes:
                             secure_podcast_name = secure_filename(request.form['castname'])
                             secure_ep_name = secure_filename(episode[1])
@@ -206,11 +212,6 @@ def edit_cast(castname):
                                 current_app.config['UPLOAD_FOLDER'],
                                 new_filename
                             )
-                            if not os.path.isdir(os.path.join(current_app.config["UPLOAD_FOLDER"],
-                                                              secure_podcast_name)):
-                                os.mkdir(os.path.join(current_app.config["UPLOAD_FOLDER"],
-                                                      secure_podcast_name))
-                                new_folder = True
                             os.rename(episode[2], filepath)
                             g.db_cursor.execute(
                                 "update podcasts_casts set castfile=%s where id=%s",
@@ -410,15 +411,12 @@ def image_upload(img, meta_array, neworedit):
             except:
                 return 3
             if neworedit == "edit":
-                try:
-                    os.remove(meta_array[2])
-                except FileNotFoundError:
-                    pass
                 g.db_cursor.execute(
                     "update podcasts_header set name=%s, description=%s, \
-                     url=%s, image=%s, categories=%s where id=%s",
+                     url=%s, image=%s, categories=%s, explicit=%s where id=%s",
                     [request.form['castname'].strip(), request.form['description'],
-                     request.form['url'], imgpath, request.form['category'], meta_array[0]]
+                     request.form['url'], imgpath, request.form['category'], 
+                     request.form['explicit'], meta_array[0]]
                 )
                 g.db.commit()
             elif neworedit == "new":
