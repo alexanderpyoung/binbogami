@@ -26,3 +26,4 @@ A Python 3 Flask application for the creation and maintenance of podcast RSS fee
 * pkg-config
 * (on Debian systems) python3-tk
 * postgres
+* sendmail (or other localhost SMTP server)
