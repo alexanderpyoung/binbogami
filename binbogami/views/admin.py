@@ -13,6 +13,10 @@ from mutagenx.oggopus import OggOpus
 from mutagenx.oggspeex import OggSpeex
 from PIL import Image
 from binbogami.views.register import check_email
+import random
+import string
+import smtplib
+from email.mime.text import MIMEText
 
 admin = Blueprint("admin", __name__, template_folder="templates")
 
@@ -624,3 +628,36 @@ def user_admin():
                 return redirect(url_for('log.logout'))
     else:
         abort(401)
+
+@admin.route("/admin/user/pwreset", methods=["GET", "POST"])
+def pw_reset():
+    """
+    Function for password reset
+    """
+    if request.method == "GET":
+        if 'username' in session:
+            return redirect(url_for('admin.show_casts'))
+        else:
+            return render_template("password_reset.html")
+    elif request.method == "POST":
+       g.db_cursor.execute(
+               "select * from users where username=%s and email=%s",
+               [request.form['username'], request.form['email']]
+        )
+       valid = g.db_cursor.rowcount
+       if valid > 0:
+           pw_random = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(13))
+           g.db_cursor.execute(
+              "update users set password=%s where username=%s and email=%s",
+              [request.form['username'], request.form['email']]
+           )
+           msg = MIMEText("Your password for user " + + " has been reset to " + pw_random)
+           msg["Subject"] = "Binbogami: Password reset"
+           msg["From"] = "noreply@binbogami.com"
+           msg["To"] = request.form['email']
+           s = smtplib.SMTP('localhost')
+           s.send_message(msg)
+           s.quit()
+           return render_template('password_reset.html', success="Password reset sucessful, check your email." + pw_random)
+       else:
+           return render_template('password_reset.html', error="Email and password don't match those on file.")
