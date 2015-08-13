@@ -647,9 +647,10 @@ def pw_reset():
        valid = g.db_cursor.rowcount
        if valid > 0:
            pw_random = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(13))
+           pw_hash = hash_password(pw_random)
            g.db_cursor.execute(
               "update users set pwhash=%s where username=%s and email=%s",
-              [pw_random, request.form['username'], request.form['email']]
+              [pw_hash, request.form['username'], request.form['email']]
            )
            msg = MIMEText("Your password for user " + request.form['username']  + " has been reset to " + pw_random)
            msg["Subject"] = "Binbogami: Password reset"
