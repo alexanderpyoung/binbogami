@@ -658,6 +658,6 @@ def pw_reset():
            s = smtplib.SMTP('localhost')
            s.send_message(msg)
            s.quit()
-           return render_template('password_reset.html', success="Password reset sucessful, check your email." + pw_random)
+           return render_template('password_reset.html', success="Password reset sucessful, check your email.")
        else:
            return render_template('password_reset.html', error="Email and password don't match those on file.")
