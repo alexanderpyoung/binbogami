@@ -182,7 +182,7 @@ def build_xml(meta, casts, name):
     for cast in casts:
         #Some variable-setting
         encoded_url = request.url_root + quote(meta[2]) + "/" + \
-                      quote(cast[2]) + "." + quote(cast[7])
+                      secure_filename(cast[2]) + "." + quote(cast[7])
         if cast[7] == "mp3":
             mime_type = "audio/mpeg"
         else:
