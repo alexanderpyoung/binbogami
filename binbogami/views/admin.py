@@ -652,7 +652,6 @@ def pw_reset():
               "update users set pwhash=%s where username=%s and email=%s",
               [pw_hash, request.form['username'], request.form['email']]
            )
-           g.db.commit()
            msg = MIMEText("Your password for user " + request.form['username']  + " has been reset to " + pw_random)
            msg["Subject"] = "Binbogami: Password reset"
            msg["From"] = "noreply@binbogami.com"
