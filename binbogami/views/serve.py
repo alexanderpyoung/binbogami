@@ -15,14 +15,16 @@ def serve_file(castname, epname):
     Serves podcast media, takes castname and epname as arguments.
     """
     safe_podcast_name = secure_filename(castname)
-    safe_episode_name = secure_filename(epname)
+    safe_episode_name = secure_filename(epname).rsplit(".")[0]
     safe_name = safe_podcast_name + "/" + safe_episode_name
-    filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], safe_name)
+    safe_ext = secure_filename(epname).rsplit(".")[-1]
+    filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], safe_name + "." + safe_ext)
+    print(filepath)
     if os.path.isfile(filepath):
         if 'name' not in session:
             epname_noext = epname.rsplit(".")[0]
             stats_update_episode(epname_noext)
-        return send_file_206(filepath, safe_name)
+        return send_file_206(filepath, safe_name, safe_ext)
     else:
         abort(404)
 
@@ -35,13 +37,14 @@ def after_request(response):
     return response
 
 
-def send_file_206(path, safe_name):
+def send_file_206(path, safe_name, safe_ext):
     """
     Handling for partial downloads of media files (Safari's streaming, iOS)
     """
     range_header = request.headers.get('Range', None)
     if not range_header:
-        return send_from_directory(current_app.config["UPLOAD_FOLDER"], safe_name)
+        print(current_app.config["UPLOAD_FOLDER"] + safe_name + '.' + safe_ext)
+        return send_from_directory(current_app.config["UPLOAD_FOLDER"], safe_name + '.' + safe_ext)
 
     size = os.path.getsize(path)
     byte1, byte2 = 0, None
