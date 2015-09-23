@@ -19,7 +19,6 @@ def serve_file(castname, epname):
     safe_name = safe_podcast_name + "/" + safe_episode_name
     safe_ext = secure_filename(epname).rsplit(".")[-1]
     filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], safe_name + "." + safe_ext)
-    print(filepath)
     if os.path.isfile(filepath):
         if 'name' not in session:
             epname_noext = epname.rsplit(".")[0]
@@ -43,7 +42,6 @@ def send_file_206(path, safe_name, safe_ext):
     """
     range_header = request.headers.get('Range', None)
     if not range_header:
-        print(current_app.config["UPLOAD_FOLDER"] + safe_name + '.' + safe_ext)
         return send_from_directory(current_app.config["UPLOAD_FOLDER"], safe_name + '.' + safe_ext)
 
     size = os.path.getsize(path)
