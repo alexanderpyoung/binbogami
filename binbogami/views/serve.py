@@ -102,7 +102,7 @@ def serve_xml(castname):
         else:
             episodes = []
         g.db_cursor.execute(
-            "select name from users where id=%s",
+            "select name, email from users where id=%s",
             [cast_meta[1]]
         )
         name = g.db_cursor.fetchone()
@@ -131,6 +131,8 @@ def build_xml(meta, casts, name):
                     )
     channel = ET.SubElement(rss, 'channel')
     podcast_title = ET.SubElement(channel, 'title')
+    podcast_language = ET.SubElement(channel, 'language')
+    podcast_language.text = "en-gb"
     podcast_description = ET.SubElement(channel, 'description')
     podcast_link = ET.SubElement(channel, 'link')
     ET.SubElement(channel, '{http://www.w3.org/2005/Atom}link',
@@ -168,16 +170,25 @@ def build_xml(meta, casts, name):
     podcast_itunes_subtitle = ET.SubElement(channel,
                                             '{http://www.itunes.com/dtds/podcast-1.0.dtd}subtitle')
     podcast_itunes_category = ET.SubElement(channel,
-                                            '{http://www.itunes.com/dtds/podcast-1.0.dtd}category')
+                                            '{http://www.itunes.com/dtds/podcast-1.0.dtd}category',
+                                            {
+                                                'text': meta[6]
+                                            })
+    podcast_itunes_owner = ET.SubElement(channel,
+                                         '{http://www.itunes.com/dtds/podcast-1.0.dtd}owner')
+    podcast_itunes_email = ET.SubElement(podcast_itunes_owner,
+                                         '{http://www.itunes.com/dtds/podcast-1.0.dtd}email')
     podcast_itunes_image = ET.SubElement(channel,
-                                         '{http://www.itunes.com/dtds/podcast-1.0.dtd}image')
+                                         '{http://www.itunes.com/dtds/podcast-1.0.dtd}image',
+                                         {
+                                             'href': request.url_root.replace('https', 'http') + "image/" + cast_img
+                                         })
 
     #iTunes population
     podcast_itunes_author.text = name[0]
     podcast_itunes_subtitle.text = meta[3]
-    podcast_itunes_category.text = meta[6]
-    podcast_itunes_image.text = request.url_root + "image/" + cast_img
     podcast_itunes_explicit.text = meta[7]
+    podcast_itunes_email.text = name[1] 
 
     #now for the items for each podcast.
     for cast in casts:
@@ -197,7 +208,7 @@ def build_xml(meta, casts, name):
         ET.SubElement(cast_item, 'enclosure',
                       {
                           'length': str(round(float(cast_length))),
-                          'url': encoded_url,
+                          'url': encoded_url.replace('https', 'http'),
                           'type': mime_type
                       }
                      )
@@ -216,7 +227,7 @@ def build_xml(meta, casts, name):
     #XML miscellanea
     doctype = '<?xml version="1.0" encoding="utf-8" ?>\n'
     body = ET.tostring(rss, encoding="UTF-8", method="xml", pretty_print="True").decode("utf-8")
-    return Markup(doctype + body)
+    return Response(doctype + body, mimetype='text/xml')
 
 def stats_update_xml(cast):
     """
