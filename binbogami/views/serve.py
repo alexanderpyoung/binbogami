@@ -182,6 +182,7 @@ def build_xml(meta, casts, name):
     #now for the items for each podcast.
     for cast in casts:
         #Some variable-setting
+        cast_length = cast[6]
         encoded_url = request.url_root + quote(meta[2]) + "/" + \
                       quote(cast[2]) + "." + quote(cast[7])
         if cast[7] == "mp3":
@@ -195,6 +196,7 @@ def build_xml(meta, casts, name):
         cast_date = ET.SubElement(cast_item, 'pubDate')
         ET.SubElement(cast_item, 'enclosure',
                       {
+                          'length': str(round(float(cast_length))),
                           'url': encoded_url,
                           'type': mime_type
                       }
