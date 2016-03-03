@@ -194,6 +194,22 @@ def build_xml(meta, casts, name):
     for cast in casts:
         #Some variable-setting
         cast_length = cast[6]
+        cast_hours = int(cast_length / 3600)
+        cast_minutes = int((cast_length - (cast_hours * 3600)) / 60)
+        cast_seconds = int((cast_length - (cast_hours * 3600) - (cast_minutes * 60)))
+        if cast_hours < 10:
+          duration_hours = "0" + str(cast_hours)
+        else:
+          duration_hours = str(cast_hours)
+        if cast_minutes < 10:
+          duration_minutes = "0" + str(cast_minutes)
+        else:
+          duration_minutes = str(cast_minutes)
+        if cast_seconds < 10:
+          duration_seconds = "0" + str(cast_seconds)
+        else:
+          duration_seconds = str(cast_seconds)
+        duration = duration_hours + ":" duration_minutes + ":" + duration_seconds
         encoded_url = request.url_root + quote(meta[2]) + "/" + \
                       quote(cast[2]) + "." + quote(cast[7])
         if cast[7] == "mp3":
@@ -217,6 +233,10 @@ def build_xml(meta, casts, name):
                                       'isPermaLink':"true"
                                   }
                                  )
+        itunes_duration = ET.SubElement(channel,
+                            '{http://www.itunes.com/dtds/podcast-1.0.dtd}duration')
+        itunes_duration.text = duration
+
 
         #Content
         cast_title.text = cast[2]
