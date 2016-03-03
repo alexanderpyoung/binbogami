@@ -233,7 +233,7 @@ def build_xml(meta, casts, name):
                                       'isPermaLink':"true"
                                   }
                                  )
-        itunes_duration = ET.SubElement(channel,
+        itunes_duration = ET.SubElement(cast_item,
                             '{http://www.itunes.com/dtds/podcast-1.0.dtd}duration')
         itunes_duration.text = duration
 
