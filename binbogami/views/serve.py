@@ -193,7 +193,7 @@ def build_xml(meta, casts, name):
     #now for the items for each podcast.
     for cast in casts:
         #Some variable-setting
-        cast_length = cast[6]
+        cast_length = float(cast[6])
         cast_hours = int(cast_length / 3600)
         cast_minutes = int((cast_length - (cast_hours * 3600)) / 60)
         cast_seconds = int((cast_length - (cast_hours * 3600) - (cast_minutes * 60)))
@@ -209,7 +209,7 @@ def build_xml(meta, casts, name):
           duration_seconds = "0" + str(cast_seconds)
         else:
           duration_seconds = str(cast_seconds)
-        duration = duration_hours + ":" duration_minutes + ":" + duration_seconds
+        duration = duration_hours + ":" + duration_minutes + ":" + duration_seconds
         encoded_url = request.url_root + quote(meta[2]) + "/" + \
                       quote(cast[2]) + "." + quote(cast[7])
         if cast[7] == "mp3":
