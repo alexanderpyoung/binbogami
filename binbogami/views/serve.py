@@ -207,7 +207,7 @@ def build_xml(meta, casts, name):
         cast_date = ET.SubElement(cast_item, 'pubDate')
         ET.SubElement(cast_item, 'enclosure',
                       {
-                          'length': str(round(float(cast_length))),
+                          'length': str(os.stat(cast[4]).st_size),
                           'url': encoded_url.replace('https', 'http'),
                           'type': mime_type
                       }
