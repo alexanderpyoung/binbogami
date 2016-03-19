@@ -14,6 +14,17 @@
 		toolbar: "undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | print preview media fullpage | forecolor",
 		width: 500
 	});
+  
+  function hideSwap(hide, show) {
+    $(hide).hide();
+    $(show).show();
+    if (show == "#url-address") {
+      document.getElementById("submit-button").disabled = false;
+    }
+    if (hide == "#url-address") {
+      document.getElementById("submit-button").disabled = true;
+    }
+  }
 	</script>
 {% endblock %}
 {% block body %}
@@ -27,15 +38,16 @@
                 <dt>Description:
                 <dd><textarea name="description">Enter your description here.</textarea>
 				<dt>File:
-				<ul id="filelist"></ul>
-				<br />
-
-				<div id="container">
+        <dd><a href="javascript:hideSwap('#url-address', '#upload-file')">Upload file</a> | <a href="javascript:hideSwap('#upload-file', '#url-address')">Provide URL</a>
+        <br /><br />
+        <div id="url-address" style="display:none">File url: <input type="text" name="epurl" /></div>
+				<div id="upload-file" style="">
+	      <ul id="filelist"></ul>			
 				    <a id="browse" href="javascript:;">[Browse...]</a>
 				    <a id="start-upload" href="javascript:;">[Start Upload]</a>
 				</div>
-				<dd><input type="hidden" id="file-upload" name="file-upload" value="">
-                <dd><input type="submit" id="submit-button" value="Add podcast episode" disabled>
+				<input type="hidden" id="file-upload" name="file-upload" value="">
+                <input type="submit" id="submit-button" value="Add podcast episode" disabled>
             </dl>
         </form></div>
 	</div>

@@ -2,6 +2,7 @@
 Module for the admin functions of binbogami
 """
 import os, shutil
+import requests
 from re import match
 from flask import Blueprint, g, session, render_template, abort, request, redirect
 from flask import url_for, current_app, Markup
@@ -320,7 +321,17 @@ def new_ep(castname):
                 if "/" in request.form['epname']:
                     return render_template("ep_new.html", podcastid=podcastid,
                                            error="No forward slashes permitted in epsiode name.")
-                ep = request.form["file-upload"]
+                if request.form["file-upload"] is not "" and request.form["epurl"] is "":    
+                    ep = secure_filename(request.form["file-upload"])
+                elif request.form["file-upload"] is "" and request.form["epurl"] is not "":
+                    if validate_url(request.form["epurl"]) == 0:
+                        ep = request.form["epurl"]
+                    else:
+                        return render_template("ep_new.html", podcastid=podcastid,
+                                               error="Please under a valid URL")
+                else:
+                    return render_template("ep_new.html", podcastid=podcastid,
+                                           error="Please either upload OR provide a URL")
                 g.db_cursor.execute(
                     "select title from podcasts_casts where title=%s and podcast=%s",
                     [request.form['epname'], podcastid[0]]
@@ -328,7 +339,7 @@ def new_ep(castname):
                 result = g.db_cursor.rowcount
                 if ep and result is 0 and len(ep) != 0:
                     cast_upload(
-                        secure_filename(ep), podcastid, request.form["epname"],
+                        ep, podcastid, request.form["epname"],
                         request.form['description'], "new"
                     )
                     return redirect(url_for('admin.show_eps', castname=castname))
@@ -350,6 +361,7 @@ def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
     """
     Function to handle podcast episode upload
     """
+    print("Entered cast_upload")
     file_ext = ep_file.rsplit('.', 1)[1]
     secure_podcast_name = secure_filename(podcast[1])
     secure_ep_name = secure_filename(ep_name)
@@ -361,10 +373,17 @@ def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
         )
     if not os.path.isdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name)):
         os.mkdir(os.path.join(current_app.config["UPLOAD_FOLDER"], secure_podcast_name))
-    try:
-        shutil.move(os.path.join(current_app.config["UPLOAD_FOLDER"], "tmp", ep_file), filepath)
-    except:
-        raise
+    if validate_url(ep_file) == 1:
+        try:
+            shutil.move(os.path.join(current_app.config["UPLOAD_FOLDER"], "tmp", ep_file), filepath)
+        except:
+            raise
+    else:
+        r = requests.get(ep_file)
+        print("Getting file")
+        with open(filepath, "wb") as ep_file:
+            for chunk in r.iter_content(chunk_size=1024):
+                ep_file.write(chunk)
     if file_ext == "mp3":
         file_length = MP3(filepath).info.length
     elif file_ext == "ogg":
@@ -388,9 +407,10 @@ def cast_upload(ep_file, podcast, ep_name, ep_description, neworedit):
         )
         g.db.commit()
     else:
+        print("New filepath" + filepath)
         g.db_cursor.execute(
-            "update podcasts_casts set castfile=%s, length=%s, filetype=%s where title=%s",
-            [filepath, file_length, file_ext, ep_name])
+            "update podcasts_casts set castfile=%s, length=%s, filetype=%s where id=%s",
+            [filepath, file_length, file_ext, neworedit])
         g.db.commit()
 
 def image_upload(img, meta_array, neworedit):
@@ -470,15 +490,19 @@ def edit_ep(castname, epname):
                     return render_template("ep_edit.html", podcastid=podcastid,
                                            error="No forward slashes permitted in epsiode name.",
                                            cast=cast)
-                episode_file = request.form['file-upload']
+                if request.form['epurl'] is not "":
+                    episode_file = request.form['epurl']
+                else:
+                    episode_file = secure_filename(request.form['file-upload'])
                 g.db_cursor.execute(
                     "select id from podcasts_casts where title=%s",
                     [request.form['epname']]
                 )
                 cast_name_check = g.db_cursor.rowcount
+                print(len(episode_file))
                 if cast_name_check is 0 or (cast_name_check is not 0 \
                 and request.form['epname'] == cast[2]):
-                    if len(episode_file) == 0:
+                    if len(episode_file) is 0:
                         secure_cast_name = secure_filename(castname)
                         secure_episode_name = secure_filename(request.form['epname'])
                         secure_file_ext = secure_filename(cast[5])
@@ -495,12 +519,13 @@ def edit_ep(castname, epname):
                         )
                         g.db.commit()
                     else:
+                        print(cast[4])
                         try:
                             os.remove(cast[4])
                         except FileNotFoundError:
-                            pass
-                        cast_upload(secure_filename(episode_file), podcastid,
-                                    request.form['epname'], request.form['description'], "edit")
+                            print("File not found")
+                        cast_upload(episode_file, podcastid,
+                                    request.form['epname'], request.form['description'], cast[0])
                     g.db_cursor.execute(
                         "update podcasts_casts set title=%s, description=%s where id=%s",
                         [request.form['epname'].strip(), request.form['description'], cast[0]]

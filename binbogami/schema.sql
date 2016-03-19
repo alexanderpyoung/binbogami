@@ -31,10 +31,11 @@ create table podcasts_casts (
     podcast integer references podcasts_header (id),
     title text not null,
     description text not null,
-    castfile text not null,
+    castfile text,
   	date timestamp with time zone not null,
 	  length text not null,
-	  filetype text not null
+	  filetype text not null,
+    casturl text
 );
 
 create table stats_xml (
